@@ -624,10 +624,14 @@ function updateTimers(){
   if(el){ el.textContent='⏱ '+rem; if(rem<=5) el.classList.add('low'); }
 }
 setInterval(updateTimers, 500);
+// 방장: 진행 중 상태를 3초마다 재송신 → 유실된 업데이트 자동 복구(클라이언트 동기화)
+setInterval(()=>{ try{ if(isHost && G && !G.handOver && roomCfg && roomCfg.status==='playing') hostWriteState(); }catch(e){} }, 3000);
+let lastActionSig='';
 function renderActionBar(s){
   const bar=$('actionBar');
   document.body.classList.remove('acting');
   if(s.gameOver){
+    lastActionSig='';
     bar.innerHTML=`<span id="waitMsg">🏆 ${esc(s.winnerName||'')} 우승 — 게임 종료!</span>`
       + (isHost?`<span id="hostCtl"><button class="primary" onclick="hostRestart()">다시 시작</button></span>`
               :`<span id="hostCtl" style="margin-left:auto;color:var(--dim)">방장이 '다시 시작'을 누르면 새 게임이 시작돼요</span>`);
@@ -635,6 +639,7 @@ function renderActionBar(s){
   }
   const myTurn=(s.turn===myUid && !s.handOver && s.players && s.players[myUid] && !s.players[myUid].folded && !s.players[myUid].allin);
   if(!myTurn){
+    lastActionSig='';
     let m='대기 중…';
     if(s.handOver) m='핸드 종료 — 다음 핸드 준비 중…';
     else if(s.turn && s.players && s.players[s.turn]) m=esc(s.players[s.turn].name)+' 님의 차례';
@@ -643,6 +648,10 @@ function renderActionBar(s){
   }
   document.body.classList.add('acting');
   const me=s.players[myUid];
+  // 상태가 그대로면 버튼을 다시 그리지 않음 (재송신 시 레이즈 슬라이더 초기화 방지)
+  const sig=s.handNo+'|'+s.street+'|'+s.currentBet+'|'+me.sc+'|'+me.stack;
+  if(sig===lastActionSig && bar.querySelector('button.fold')) return;
+  lastActionSig=sig;
   const toCall=s.currentBet - me.sc;
   const bb=roomCfg.bb;
   const minRaiseTo=s.currentBet + (s.lastRaise||bb);
@@ -681,11 +690,20 @@ function nextActorName(s){
   }
   return null;
 }
+let actionWatchdog=null;
 function sendAction(type, amtTo){
   const s=lastState;
   db.ref('rooms/'+roomId+'/actions/'+myUid).set({type, amtTo:amtTo||0, handNo:s.handNo, street:s.street, ts:Date.now()});
   const nm=nextActorName(s);
   $('actionBar').innerHTML=`<span id="waitMsg">${nm?esc(nm)+' 님의 차례입니다…':'다음 차례를 기다리는 중…'}</span>`;
+  // 워치독: 액션이 반영 안 되면(여전히 내 차례) 버튼 자동 복구 — 새로고침 없이 멈춤 해제
+  clearTimeout(actionWatchdog);
+  actionWatchdog=setTimeout(()=>{
+    if(lastState && lastState.turn===myUid && !lastState.handOver){
+      db.ref('rooms/'+roomId+'/actions/'+myUid).set({type, amtTo:amtTo||0, handNo:lastState.handNo, street:lastState.street, ts:Date.now()}); // 최신 상태로 재전송
+      renderActionBar(lastState);  // 버튼 다시 표시
+    }
+  }, 2200);
 }
 
 /* ===================================================================
