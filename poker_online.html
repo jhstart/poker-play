@@ -54,8 +54,8 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 #table{position:absolute; left:50%; top:48%; transform:translate(-50%,-50%); width:min(80%,860px); aspect-ratio:1.85;
   background:radial-gradient(ellipse at center, var(--felt) 0%, var(--felt-dark) 100%);
   border-radius:50%/55%; border:14px solid #3d2b1f; box-shadow:0 10px 40px rgba(0,0,0,.6), inset 0 0 60px rgba(0,0,0,.35);}
-.seat{position:absolute; width:116px; transform:translate(-50%,-50%); text-align:center; transition:opacity .25s;}
-.seat .box{background:rgba(10,14,18,.85); border:2px solid #333d48; border-radius:9px; padding:3px 6px; position:relative;}
+.seat{position:absolute; width:100px; transform:translate(-50%,-50%); text-align:center; transition:opacity .25s;}
+.seat .box{background:rgba(10,14,18,.85); border:2px solid #333d48; border-radius:9px; padding:3px 5px; position:relative;}
 .seat.active .box{border-color:var(--gold); box-shadow:0 0 12px rgba(232,194,100,.55);}
 .seat.me .box{border-color:#5077ab;}
 .seat.folded{opacity:.36;}
@@ -70,8 +70,8 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 .seat .timer:empty{display:none;}
 .seat .timer.low{color:#ff6b6b;}
 .seat.dealer .btn-disc{display:block;}
-.cards{display:flex; gap:3px; justify-content:center; margin:3px 0 1px;}
-.pcard{width:27px; height:39px; border-radius:5px; background:#fff; color:#111; font-weight:700; font-size:13px; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.05; box-shadow:0 2px 4px rgba(0,0,0,.4);}
+.cards{display:flex; gap:3px; justify-content:center; margin:2px 0 1px;}
+.pcard{width:24px; height:34px; border-radius:4px; background:#fff; color:#111; font-weight:700; font-size:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.05; box-shadow:0 2px 4px rgba(0,0,0,.4);}
 .pcard.red{color:#cc2222;}
 .pcard.back{background:repeating-linear-gradient(45deg,#5a7ab8,#5a7ab8 4px,#4a66a0 4px,#4a66a0 8px); border:2px solid #dde;}
 .pcard.big{width:46px; height:64px; font-size:19px;}
@@ -82,12 +82,16 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 #potLbl:empty{display:none;}
 .pot-lbl{font-size:11px; letter-spacing:5px; color:#cfe0cf; opacity:.7; font-weight:600;}
 .pot-amt{font-size:34px; font-weight:800; color:var(--gold); text-shadow:0 2px 5px #000; line-height:1.05;}
-.street-pill{font-size:12px; font-weight:700; color:var(--gold); border:1.5px solid var(--gold); border-radius:12px; padding:1px 13px; background:rgba(8,12,16,.55); margin-top:3px;}
+.street-row{display:flex; align-items:center; gap:8px; margin-top:5px;}
+.street-pill{font-size:15px; font-weight:700; color:var(--gold); border:1.5px solid var(--gold); border-radius:13px; padding:2px 16px; background:rgba(8,12,16,.55);}
 .street-pill:empty{display:none;}
+.turn-timer{font-size:16px; font-weight:800; color:#ffd27a; text-shadow:0 1px 3px #000;}
+.turn-timer:empty{display:none;}
+.turn-timer.low{color:#ff6b6b;}
 /* 펠트 위 베팅액 배지 [금액 bet] */
 .felt-bet{position:absolute; transform:translate(-50%,-50%); z-index:5; pointer-events:none; white-space:nowrap;
-  background:rgba(8,12,16,.85); border:1px solid #46535f; color:#cdd5de;
-  font-size:13px; font-weight:800; padding:2px 10px; border-radius:11px; box-shadow:0 2px 5px rgba(0,0,0,.55);}
+  background:rgba(8,12,16,.88); border:1.5px solid #46535f; color:#cdd5de;
+  font-size:15px; font-weight:800; padding:3px 12px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,.6);}
 .felt-bet.t-bet{border-color:var(--gold); color:var(--gold);}
 .felt-bet.t-check{border-color:#3fae5a; color:#9fe0a8;}
 .felt-bet.t-fold{border-color:#6a4040; color:#c98a8a; opacity:.85;}
@@ -132,7 +136,7 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
   #main{flex-direction:column; min-height:0;}
   #tableWrap{min-width:0; flex:1; min-height:0;}
   #table{width:97%; top:45%; aspect-ratio:1.12; border-width:9px;}
-  .seat{width:76px;}
+  .seat{width:66px;}
   .seat .box{padding:4px 5px;}
   .seat .nm{font-size:11px;}
   .seat .stk{font-size:11px;}
@@ -145,8 +149,9 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
   #centerMsg{font-size:13px; top:15%;}
   .pot-amt{font-size:27px;}
   .pot-lbl{font-size:9px; letter-spacing:3px;}
-  .street-pill{font-size:11px; padding:1px 10px;}
-  .felt-bet{font-size:11px; padding:2px 8px;}
+  .street-pill{font-size:13px; padding:2px 13px;}
+  .turn-timer{font-size:14px;}
+  .felt-bet{font-size:13px; padding:3px 11px;}
   /* 좌석 더 컴팩트하게 (가운데 팟 공간 확보) */
   .seat .nm{font-size:10px;}
   .seat .stk{font-size:10px;}
@@ -588,7 +593,8 @@ function feltStatus(pl){
 // 팟: POT + 큰 숫자 + 스트리트(프리플랍/플랍/턴/리버) — 칩 그림 없음
 function potHTML(amount, street){
   const names=['프리플랍','플랍','턴','리버'];
-  return `<div class="pot-lbl">P O T</div><div class="pot-amt">${(amount||0).toLocaleString()}</div><div class="street-pill">${names[street]||''}</div>`;
+  return `<div class="pot-lbl">P O T</div><div class="pot-amt">${(amount||0).toLocaleString()}</div>`
+    +`<div class="street-row"><span class="street-pill">${names[street]||''}</span><span class="turn-timer"></span></div>`;
 }
 function pcardHTML(c, big, faceDown){
   if(faceDown||c==null) return `<div class="pcard back ${big?'big':''}"></div>`;
@@ -603,7 +609,7 @@ function renderTable(s){
   const M=seatList.length||1;
   const myI=Math.max(0, seatList.findIndex(x=>x.uid===myUid));
   const small=window.innerWidth<=640;
-  const rx=small?34:41, ry=small?45:43;   // 좌석을 바깥으로 밀어 가운데 팟·정보 공간 확보
+  const rx=small?30:37, ry=small?41:39;   // 중앙 쪽으로 당김
   for(let i=0;i<seatList.length;i++){
     const sd=seatList[i];
     const pl=s.players?s.players[sd.uid]:null;
@@ -638,14 +644,13 @@ function renderTable(s){
       <div class="nm">${esc(sd.name)}${sd.uid===myUid?' (나)':''}</div>
       <div class="cards">${cardsHTML}</div>
       <div class="stk">${pl?pl.stack:'-'}</div>
-      <div class="timer"></div>
     </div>`;
     tbl.appendChild(div);
     // 펠트(좌석→중앙)에 상태 배지: 베팅액 / 체크 / 폴드 / 대기 / 탈락
     if(pl){
       const fs=feltStatus(pl);
       if(fs){
-        const bx=x+(50-x)*0.30, by=y+(50-y)*0.30;
+        const bx=x+(50-x)*0.40, by=y+(50-y)*0.40;
         const b=document.createElement('div');
         let cls='felt-bet';
         if(/bet/.test(fs)) cls+=' t-bet';
@@ -660,20 +665,21 @@ function renderTable(s){
       }
     }
   }
-  updateTimers();
   $('board').innerHTML=(s.board||[]).map(c=>pcardHTML(c,true,false)).join('');
   $('potLbl').innerHTML=(s.pot>0||(s.board&&s.board.length))?potHTML(s.pot||0, s.street||0):'';
+  updateTimers();
   $('centerMsg').textContent=s.centerMsg||'';
   renderActionBar(s);
 }
 // 액션 제한시간 카운트다운 (0.5초마다 갱신)
 function updateTimers(){
   const s=lastState;
-  document.querySelectorAll('.seat .timer').forEach(el=>{ el.textContent=''; el.classList.remove('low'); });
-  if(!s || s.handOver || !s.turnDeadline) return;
+  const el=document.querySelector('.turn-timer');
+  if(!el) return;
+  if(!s || s.handOver || !s.turnDeadline){ el.textContent=''; el.classList.remove('low'); return; }
   const rem=Math.max(0, Math.ceil((s.turnDeadline - Date.now())/1000));
-  const el=document.querySelector('.seat.active .timer');
-  if(el){ el.textContent='⏱ '+rem; if(rem<=5) el.classList.add('low'); }
+  el.textContent='⏱ '+rem;
+  el.classList.toggle('low', rem<=5);
 }
 setInterval(updateTimers, 500);
 // 방장: 진행 중 상태를 3초마다 재송신 → 유실된 업데이트 자동 복구(클라이언트 동기화)
