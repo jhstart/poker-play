@@ -79,8 +79,13 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 #board{position:absolute; left:50%; top:43%; transform:translate(-50%,-50%); display:flex; gap:7px;}
 #potLbl{position:absolute; left:50%; top:60%; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; gap:4px; white-space:nowrap;}
 #potLbl:empty{display:none;}
-.pot-chips{display:flex; align-items:center; height:22px; padding-left:9px;}
-.pot-chips .chip{width:20px; height:20px; border-radius:50%; margin-left:-9px; border:2px solid rgba(255,255,255,.45); box-shadow:0 2px 3px rgba(0,0,0,.55);}
+.pot-chips{display:flex; align-items:center; height:24px; padding-left:13px;}
+.pot-chips .chip{width:24px; height:24px; border-radius:50%; margin-left:-13px; position:relative;
+  background:repeating-conic-gradient(var(--c) 0 22deg, #fafafa 22deg 30deg);
+  box-shadow:0 2px 4px rgba(0,0,0,.6);}
+.pot-chips .chip::after{content:''; position:absolute; inset:4px; border-radius:50%;
+  background:var(--c); border:1.5px solid rgba(255,255,255,.75);
+  box-shadow:inset 0 0 3px rgba(0,0,0,.4);}
 .pot-amt{background:rgba(8,12,16,.72); border:1.5px solid var(--gold); color:var(--gold); font-weight:800; font-size:16px; padding:2px 14px; border-radius:14px; text-shadow:0 1px 2px #000;}
 #centerMsg{position:absolute; left:50%; top:30%; transform:translateX(-50%); font-size:15px; color:var(--gold); text-shadow:0 1px 3px #000; font-weight:600; text-align:center; white-space:nowrap;}
 
@@ -130,16 +135,26 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
   .bet-chip{font-size:11px;}
   .pcard{width:26px; height:37px; font-size:12px;}
   .pcard.big{width:34px; height:48px; font-size:15px;}
-  #board{gap:4px;}
-  #potLbl{font-size:13px; top:55%;}   /* 보드 바로 아래 빈 공간으로 이동 — 카드와 겹침 방지 */
-  #centerMsg{font-size:13px; top:24%;}
+  #board{gap:4px; top:40%;}
+  #potLbl{font-size:13px; top:51%;}   /* 보드와 히어로 좌석 사이 빈 공간 */
+  #centerMsg{font-size:13px; top:18%;}
+  .pot-amt{font-size:14px; padding:2px 11px;}
+  .pot-chips .chip{width:20px; height:20px; margin-left:-11px;}
+  .pot-chips{padding-left:11px;}
+  /* 좌석 더 컴팩트하게 (가운데 팟 공간 확보) */
+  .seat .nm{font-size:10px;}
+  .seat .stk{font-size:10px;}
+  .seat .act{font-size:9px; min-height:11px;}
+  .bet-chip{font-size:10px; min-height:12px;}
 
-  /* 채팅: 항상 표시 (하단 고정, 약 5줄 + 자동 스크롤) */
-  #sidePanel{width:auto; height:150px; border-left:none; border-top:1px solid var(--line);}
+  /* 채팅: 항상 표시 (하단 고정, 약 5줄 + 내부 스크롤). 입력칸은 항상 하단 고정 */
+  #sidePanel{width:auto; height:150px; flex-shrink:0; overflow:hidden;
+    border-left:none; border-top:1px solid var(--line);}
+  #chatWrap{min-height:0;}
   #chatFab{display:none;}
   .chat-hd{display:none;}
-  #chat{padding:5px 12px; line-height:1.5;}
-  #chatBar{padding:6px 8px;}
+  #chat{flex:1 1 auto; min-height:0; overflow-y:auto; padding:5px 12px; line-height:1.5;}
+  #chatBar{flex-shrink:0; padding:6px 8px;}
   #chatBar input{padding:8px;}
 
   /* 액션바: 베팅 컨트롤을 위로, 폴드/체크를 아래로 */
@@ -550,7 +565,7 @@ function potHTML(amount){
   const bb=roomCfg?roomCfg.bb:20;
   const colors=['#e05555','#4a90d9','#3fae5a','#e8c264','#9b6dd6'];
   const n=Math.max(amount>0?1:0, Math.min(14, Math.round(amount/(bb*2))));
-  let chips=''; for(let i=0;i<n;i++) chips+=`<span class="chip" style="background:${colors[i%colors.length]}"></span>`;
+  let chips=''; for(let i=0;i<n;i++) chips+=`<span class="chip" style="--c:${colors[i%colors.length]}"></span>`;
   return `<div class="pot-chips">${chips}</div><div class="pot-amt">💰 팟 ${amount}</div>`;
 }
 function pcardHTML(c, big, faceDown){
@@ -566,7 +581,7 @@ function renderTable(s){
   const mine=seatList.find(x=>x.uid===myUid);
   const myIdx=mine?mine.seat:0;
   const small=window.innerWidth<=640;
-  const rx=small?34:41, ry=small?40:43;   // 모바일에선 좌석을 안쪽으로 모아 화면에 맞춤
+  const rx=small?34:41, ry=small?45:43;   // 모바일: 좌석을 바깥(상·하단)으로 밀어 가운데 팟 공간 확보
   for(const sd of seatList){
     const pl=s.players?s.players[sd.uid]:null;
     const rel=((sd.seat - myIdx)+N)%N;
