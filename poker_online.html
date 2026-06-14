@@ -635,10 +635,23 @@ function syncRaise(v){ $('raiseAmt').value=v; }
 function syncRange(v){ const r=$('raiseRange'); if(r){ r.value=Math.min(Math.max(+v,+r.min),+r.max);} }
 function setRaise(v){ $('raiseRange').value=v; $('raiseAmt').value=v; }
 function sendRaise(){ let v=+$('raiseAmt').value; sendAction('raise', v); }
+// 내가 액션한 직후 보여줄, 다음 차례 플레이어 이름 추정
+function nextActorName(s){
+  const order=(s.seatOrder||[]).slice().sort((a,b)=>a.seat-b.seat);
+  const n=order.length; if(!n) return null;
+  const myI=order.findIndex(o=>o.uid===myUid);
+  for(let k=1;k<=n;k++){
+    const o=order[((myI<0?0:myI)+k)%n];
+    const p=s.players&&s.players[o.uid];
+    if(o.uid!==myUid && p && !p.folded && !p.allin) return o.name;
+  }
+  return null;
+}
 function sendAction(type, amtTo){
   const s=lastState;
   db.ref('rooms/'+roomId+'/actions/'+myUid).set({type, amtTo:amtTo||0, handNo:s.handNo, street:s.street, ts:Date.now()});
-  $('actionBar').innerHTML='<span id="waitMsg">전송됨…</span>';
+  const nm=nextActorName(s);
+  $('actionBar').innerHTML=`<span id="waitMsg">${nm?esc(nm)+' 님의 차례입니다…':'다음 차례를 기다리는 중…'}</span>`;
 }
 
 /* ===================================================================
