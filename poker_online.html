@@ -80,21 +80,14 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 #board{position:absolute; left:50%; top:43%; transform:translate(-50%,-50%); display:flex; gap:7px;}
 #potLbl{position:absolute; left:50%; top:56%; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center; gap:1px; white-space:nowrap; z-index:4; pointer-events:none;}
 #potLbl:empty{display:none;}
-.pot-disc{width:26px; height:26px; border-radius:50%; position:relative;
-  background:repeating-conic-gradient(#e05555 0 20deg, #fff 20deg 28deg);
-  box-shadow:0 2px 0 #7a2e2e, 0 4px 6px rgba(0,0,0,.55);}
-.pot-disc::after{content:''; position:absolute; inset:5px; border-radius:50%; background:#e05555; border:1px solid rgba(255,255,255,.6);}
-.pot-lbl{font-size:10px; letter-spacing:4px; color:#cfe0cf; opacity:.75; font-weight:600; margin-top:3px;}
-.pot-amt{font-size:26px; font-weight:800; color:var(--gold); text-shadow:0 2px 4px #000; line-height:1.05;}
+.pot-lbl{font-size:11px; letter-spacing:5px; color:#cfe0cf; opacity:.7; font-weight:600;}
+.pot-amt{font-size:34px; font-weight:800; color:var(--gold); text-shadow:0 2px 5px #000; line-height:1.05;}
 .street-pill{font-size:12px; font-weight:700; color:var(--gold); border:1.5px solid var(--gold); border-radius:12px; padding:1px 13px; background:rgba(8,12,16,.55); margin-top:3px;}
 .street-pill:empty{display:none;}
-/* 펠트 위 베팅 칩 (좌석 → 중앙) */
-.felt-chip{position:absolute; transform:translate(-50%,-50%); text-align:center; z-index:5; pointer-events:none;}
-.felt-chip .cstack{width:24px; height:24px; border-radius:50%; margin:0 auto; position:relative;
-  background:repeating-conic-gradient(var(--c) 0 20deg, #fafafa 20deg 28deg);
-  box-shadow:0 2px 0 rgba(0,0,0,.4), 0 3px 5px rgba(0,0,0,.5);}
-.felt-chip .cstack::after{content:''; position:absolute; inset:5px; border-radius:50%; background:var(--c); border:1px solid rgba(255,255,255,.6);}
-.felt-chip .camt{font-size:11px; font-weight:800; color:#fff; background:rgba(0,0,0,.62); border-radius:8px; padding:0 6px; margin-top:2px; display:inline-block; text-shadow:0 1px 1px #000;}
+/* 펠트 위 베팅액 배지 [금액 bet] */
+.felt-bet{position:absolute; transform:translate(-50%,-50%); z-index:5; pointer-events:none; white-space:nowrap;
+  background:rgba(8,12,16,.85); border:1px solid var(--gold); color:var(--gold);
+  font-size:13px; font-weight:800; padding:2px 10px; border-radius:11px; box-shadow:0 2px 5px rgba(0,0,0,.55);}
 #centerMsg{position:absolute; left:50%; top:30%; transform:translateX(-50%); font-size:15px; color:var(--gold); text-shadow:0 1px 3px #000; font-weight:600; text-align:center; white-space:nowrap;}
 
 #sidePanel{width:280px; background:var(--panel); border-left:1px solid var(--line); display:flex; flex-direction:column;}
@@ -145,12 +138,10 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
   #board{gap:4px; top:37%;}
   #potLbl{top:53%;}
   #centerMsg{font-size:13px; top:15%;}
-  .pot-amt{font-size:21px;}
-  .pot-disc{width:22px; height:22px;}
+  .pot-amt{font-size:27px;}
   .pot-lbl{font-size:9px; letter-spacing:3px;}
   .street-pill{font-size:11px; padding:1px 10px;}
-  .felt-chip .cstack{width:21px; height:21px;}
-  .felt-chip .camt{font-size:10px; padding:0 5px;}
+  .felt-bet{font-size:11px; padding:2px 8px;}
   /* 좌석 더 컴팩트하게 (가운데 팟 공간 확보) */
   .seat .nm{font-size:10px;}
   .seat .stk{font-size:10px;}
@@ -578,10 +569,10 @@ function chipColor(a){
   if(a<500) return '#3fae5a';
   return '#26262b';
 }
-// 팟: 칩 + POT + 숫자 + 스트리트(프리플랍/플랍/턴/리버)
+// 팟: POT + 큰 숫자 + 스트리트(프리플랍/플랍/턴/리버) — 칩 그림 없음
 function potHTML(amount, street){
   const names=['프리플랍','플랍','턴','리버'];
-  return `<div class="pot-disc"></div><div class="pot-lbl">P O T</div><div class="pot-amt">${(amount||0).toLocaleString()}</div><div class="street-pill">${names[street]||''}</div>`;
+  return `<div class="pot-lbl">P O T</div><div class="pot-amt">${(amount||0).toLocaleString()}</div><div class="street-pill">${names[street]||''}</div>`;
 }
 function pcardHTML(c, big, faceDown){
   if(faceDown||c==null) return `<div class="pcard back ${big?'big':''}"></div>`;
@@ -591,16 +582,17 @@ function renderTable(s){
   lastState=s;
   $('hHandNo').textContent=s.handNo||0;
   const tbl=$('table'); tbl.innerHTML='';
-  const seatList=s.seatOrder||[];
-  const N=roomCfg?roomCfg.maxSeats:seatList.length;
-  const mine=seatList.find(x=>x.uid===myUid);
-  const myIdx=mine?mine.seat:0;
+  // 실제 입장 인원 수에 맞춰 균등 배치 (내 자리=6시, 2인=12·6시, 3인=삼각형 …)
+  const seatList=(s.seatOrder||[]).slice().sort((a,b)=>a.seat-b.seat);
+  const M=seatList.length||1;
+  const myI=Math.max(0, seatList.findIndex(x=>x.uid===myUid));
   const small=window.innerWidth<=640;
-  const rx=small?34:41, ry=small?45:43;   // 모바일: 좌석을 바깥(상·하단)으로 밀어 가운데 팟 공간 확보
-  for(const sd of seatList){
+  const rx=small?34:41, ry=small?45:43;   // 좌석을 바깥으로 밀어 가운데 팟·정보 공간 확보
+  for(let i=0;i<seatList.length;i++){
+    const sd=seatList[i];
     const pl=s.players?s.players[sd.uid]:null;
-    const rel=((sd.seat - myIdx)+N)%N;
-    const ang=Math.PI/2 + rel/N*2*Math.PI;
+    const rel=((i - myI) + M) % M;
+    const ang=Math.PI/2 + rel/M*2*Math.PI;   // 6시(π/2)부터 균등 분할
     const x=50 + rx*Math.cos(ang);
     const y=50 + ry*Math.sin(ang);
     const div=document.createElement('div');
@@ -634,14 +626,14 @@ function renderTable(s){
       <div class="timer"></div>
     </div>`;
     tbl.appendChild(div);
-    // 펠트 위 베팅 칩 (좌석 → 중앙 방향으로 배치)
+    // 펠트 위 베팅액 배지 ([금액 bet], 좌석 쪽에 가깝게)
     if(pl && pl.sc>0){
-      const bx=x+(50-x)*0.42, by=y+(50-y)*0.42;
-      const chip=document.createElement('div');
-      chip.className='felt-chip';
-      chip.style.left=bx+'%'; chip.style.top=by+'%';
-      chip.innerHTML=`<div class="cstack" style="--c:${chipColor(pl.sc)}"></div><div class="camt">${pl.sc}</div>`;
-      tbl.appendChild(chip);
+      const bx=x+(50-x)*0.30, by=y+(50-y)*0.30;
+      const b=document.createElement('div');
+      b.className='felt-bet';
+      b.style.left=bx+'%'; b.style.top=by+'%';
+      b.textContent=pl.sc+' bet';
+      tbl.appendChild(b);
     }
   }
   updateTimers();
