@@ -66,6 +66,9 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 .seat .off{position:absolute; top:-9px; left:-6px; background:#5a2e2e; color:#e7b3b3; font-size:9px; padding:1px 5px; border-radius:8px; display:none;}
 .seat.offline .off{display:block;}
 .seat .btn-disc{position:absolute; top:-10px; left:50%; transform:translateX(-50%); background:#fff; color:#111; font-size:10px; font-weight:700; width:20px; height:20px; line-height:20px; border-radius:50%; display:none;}
+.seat .timer{color:#ffd27a; font-size:11px; font-weight:700; margin-top:1px;}
+.seat .timer:empty{display:none;}
+.seat .timer.low{color:#ff6b6b;}
 .seat.dealer .btn-disc{display:block;}
 .cards{display:flex; gap:4px; justify-content:center; margin:5px 0 2px;}
 .pcard{width:32px; height:46px; border-radius:5px; background:#fff; color:#111; font-weight:700; font-size:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.05; box-shadow:0 2px 4px rgba(0,0,0,.4);}
@@ -74,7 +77,11 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 .pcard.big{width:46px; height:64px; font-size:19px;}
 .bet-chip{font-size:12px; color:#ffd97a; margin-top:3px; min-height:15px; text-shadow:0 1px 2px #000;}
 #board{position:absolute; left:50%; top:43%; transform:translate(-50%,-50%); display:flex; gap:7px;}
-#potLbl{position:absolute; left:50%; top:61%; transform:translateX(-50%); font-size:15px; color:#ffd97a; text-shadow:0 1px 3px #000; font-weight:600; white-space:nowrap;}
+#potLbl{position:absolute; left:50%; top:60%; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; gap:4px; white-space:nowrap;}
+#potLbl:empty{display:none;}
+.pot-chips{display:flex; align-items:center; height:22px; padding-left:9px;}
+.pot-chips .chip{width:20px; height:20px; border-radius:50%; margin-left:-9px; border:2px solid rgba(255,255,255,.45); box-shadow:0 2px 3px rgba(0,0,0,.55);}
+.pot-amt{background:rgba(8,12,16,.72); border:1.5px solid var(--gold); color:var(--gold); font-weight:800; font-size:16px; padding:2px 14px; border-radius:14px; text-shadow:0 1px 2px #000;}
 #centerMsg{position:absolute; left:50%; top:30%; transform:translateX(-50%); font-size:15px; color:var(--gold); text-shadow:0 1px 3px #000; font-weight:600; text-align:center; white-space:nowrap;}
 
 #sidePanel{width:280px; background:var(--panel); border-left:1px solid var(--line); display:flex; flex-direction:column;}
@@ -124,19 +131,16 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
   .pcard{width:26px; height:37px; font-size:12px;}
   .pcard.big{width:34px; height:48px; font-size:15px;}
   #board{gap:4px;}
-  #potLbl{font-size:13px;}
-  #centerMsg{font-size:13px; top:26%;}
+  #potLbl{font-size:13px; top:55%;}   /* 보드 바로 아래 빈 공간으로 이동 — 카드와 겹침 방지 */
+  #centerMsg{font-size:13px; top:24%;}
 
-  /* 채팅: 하단 슬라이드 패널 (💬로 열고 닫기) */
-  #sidePanel{position:fixed; left:0; right:0; bottom:0; width:auto; height:58%;
-    border-left:none; border-top:1px solid var(--line); transform:translateY(100%);
-    transition:transform .25s ease; z-index:30; box-shadow:0 -6px 20px rgba(0,0,0,.55);}
-  #sidePanel.open{transform:translateY(0);}
-  #chatFab{display:flex; position:fixed; right:14px; bottom:92px; z-index:31;
-    width:46px; height:46px; border-radius:50%; align-items:center; justify-content:center;
-    font-size:21px; background:#3a5a8a; border:1px solid #5077ab; padding:0;}
-  body.acting #chatFab{display:none;}   /* 내 차례(베팅 중)엔 채팅 버튼 숨김 */
-  #chatClose{display:inline-block; cursor:pointer; color:var(--dim); font-size:18px; padding:0 6px;}
+  /* 채팅: 항상 표시 (하단 고정, 약 5줄 + 자동 스크롤) */
+  #sidePanel{width:auto; height:150px; border-left:none; border-top:1px solid var(--line);}
+  #chatFab{display:none;}
+  .chat-hd{display:none;}
+  #chat{padding:5px 12px; line-height:1.5;}
+  #chatBar{padding:6px 8px;}
+  #chatBar input{padding:8px;}
 
   /* 액션바: 베팅 컨트롤을 위로, 폴드/체크를 아래로 */
   #actionBar{padding:9px 10px; gap:7px; min-height:72px; align-content:flex-end;}
@@ -199,6 +203,9 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
       <div class="row">
         <div class="field"><label>스몰 블라인드</label><input id="sbVal" type="number" value="10" min="1"></div>
         <div class="field"><label>빅 블라인드</label><input id="bbVal" type="number" value="20" min="2"></div>
+      </div>
+      <div class="field"><label>액션 제한시간 (대회 룰)</label>
+        <select id="actTimeout"><option value="0">무제한</option><option value="15">15초</option><option value="30" selected>30초</option><option value="45">45초</option><option value="60">60초</option></select>
       </div>
       <button class="primary btn-full" id="btnCreate">방 만들기</button>
     </div>
@@ -422,11 +429,12 @@ $('btnCreate').onclick=async()=>{
   const name=($('nameInput').value||'').trim(); if(!name){ joinErr('닉네임을 입력하세요.'); return; }
   localStorage.setItem(LS_NAME,name);
   const sb=+$('sbVal').value, bb=+$('bbVal').value, max=+$('maxSeats').value, start=+$('startStack').value;
+  const actionTimeout=+($('actTimeout').value||0);
   if(bb<=sb){ joinErr('빅 블라인드는 스몰 블라인드보다 커야 합니다.'); return; }
   let code, tries=0;
   while(true){ code=randCode(); const snap=await db.ref('rooms/'+code+'/meta').get(); if(!snap.exists())break; if(++tries>8){joinErr('코드 생성 실패, 다시 시도하세요.');return;} }
   roomId=code; isHost=true;
-  const meta={host:myUid, status:'lobby', sb, bb, startStack:start, maxSeats:max, autoRebuy:true, createdAt:firebase.database.ServerValue.TIMESTAMP};
+  const meta={host:myUid, status:'lobby', sb, bb, startStack:start, maxSeats:max, actionTimeout, autoRebuy:true, createdAt:firebase.database.ServerValue.TIMESTAMP};
   await db.ref('rooms/'+code+'/meta').set(meta);
   await takeSeat(name, 0);
   enterRoom();
@@ -537,6 +545,14 @@ $('btnLeave').onclick=async()=>{
 
 /* ===================== 렌더링 (모든 클라이언트) ===================== */
 let lastState=null, myHole=null;
+// 팟을 칩 더미 + 숫자로 시각화
+function potHTML(amount){
+  const bb=roomCfg?roomCfg.bb:20;
+  const colors=['#e05555','#4a90d9','#3fae5a','#e8c264','#9b6dd6'];
+  const n=Math.max(amount>0?1:0, Math.min(14, Math.round(amount/(bb*2))));
+  let chips=''; for(let i=0;i<n;i++) chips+=`<span class="chip" style="background:${colors[i%colors.length]}"></span>`;
+  return `<div class="pot-chips">${chips}</div><div class="pot-amt">💰 팟 ${amount}</div>`;
+}
 function pcardHTML(c, big, faceDown){
   if(faceDown||c==null) return `<div class="pcard back ${big?'big':''}"></div>`;
   return `<div class="pcard ${isRed(c)?'red':''} ${big?'big':''}">${rankDisp(rk(c))}<span>${SUIT_CH[st(c)]}</span></div>`;
@@ -586,14 +602,26 @@ function renderTable(s){
       <div class="stk">${pl?pl.stack:'-'}</div>
       <div class="act">${pl?(pl.lastAct||''):'대기'}</div>
       <div class="bet-chip">${pl&&pl.sc>0?'🪙 '+pl.sc:''}</div>
+      <div class="timer"></div>
     </div>`;
     tbl.appendChild(div);
   }
+  updateTimers();
   $('board').innerHTML=(s.board||[]).map(c=>pcardHTML(c,true,false)).join('');
-  $('potLbl').textContent=(s.pot>0||(s.board&&s.board.length))?('팟 '+(s.pot||0)):'';
+  $('potLbl').innerHTML=(s.pot>0||(s.board&&s.board.length))?potHTML(s.pot||0):'';
   $('centerMsg').textContent=s.centerMsg||'';
   renderActionBar(s);
 }
+// 액션 제한시간 카운트다운 (0.5초마다 갱신)
+function updateTimers(){
+  const s=lastState;
+  document.querySelectorAll('.seat .timer').forEach(el=>{ el.textContent=''; el.classList.remove('low'); });
+  if(!s || s.handOver || !s.turnDeadline) return;
+  const rem=Math.max(0, Math.ceil((s.turnDeadline - Date.now())/1000));
+  const el=document.querySelector('.seat.active .timer');
+  if(el){ el.textContent='⏱ '+rem; if(rem<=5) el.classList.add('low'); }
+}
+setInterval(updateTimers, 500);
 function renderActionBar(s){
   const bar=$('actionBar');
   document.body.classList.remove('acting');
@@ -679,21 +707,53 @@ function hostStartGame(){
   G={button:-1, handNo:0};
   hostNextHand();
 }
-// 방장이 새로고침/일시정지 후 돌아왔을 때 게임 재개 (마지막 스택 복원, 다음 핸드부터 진행)
+// 방장이 새로고침/일시정지 후 돌아왔을 때 게임 재개
 async function hostResume(){
   if(!isHost || hostActionRef) return;
   hostAttachActions();
   let st=null;
   try{ const snap=await db.ref('rooms/'+roomId+'/state').get(); if(snap.exists()) st=snap.val(); }catch(e){}
-  await db.ref('rooms/'+roomId+'/actions').remove().catch(()=>{});  // 오래된 액션 큐 비우기
+  // 덱·홀카드는 방장 브라우저 localStorage에 저장돼 있음 (DB엔 안 올림 → 비밀 유지)
+  let saved=null;
+  try{ saved=JSON.parse(localStorage.getItem('poker_hg_'+roomId)||'null'); }catch(e){}
+  // 진행 중이던 판을 그대로 복원 (덱·홀카드가 있고 핸드번호 일치 + 핸드 진행중일 때)
+  if(st && !st.handOver && saved && saved.handNo===st.handNo && saved.holes && saved.deck){
+    restoreInProgress(st, saved);
+    return;
+  }
+  // 복원 불가(덱 유실 등) → 칩 보존하며 다음 핸드부터
+  await db.ref('rooms/'+roomId+'/actions').remove().catch(()=>{});
   G={button:-1, handNo:(st&&st.handNo)||0, recoverStacks:{}};
   if(st && st.players){
-    for(const uid in st.players){ G.recoverStacks[uid]=st.players[uid].stack; }
+    const mid = !st.handOver;
+    for(const uid in st.players){ const p=st.players[uid]; G.recoverStacks[uid]=(p.stack||0)+(mid?(p.tc||0):0); }
     if(st.button!=null && st.players[st.button]) G.button=st.players[st.button].seat;
   }
   G.log=(st&&st.log)||[];
-  hlog('— 방장 재접속: 다음 핸드부터 이어갑니다 —','hd');
+  hlog('— 방장 재접속 (칩 보존) —','hd');
   hostNextHand();
+}
+// 진행 중이던 판을 메모리로 완전 복원
+function restoreInProgress(st, saved){
+  clearTimeout(hostTimer);
+  hostDeck = saved.deck.slice();
+  hostHoles = {}; for(const u in saved.holes) hostHoles[u]=saved.holes[u].slice();
+  G={ handNo:st.handNo, street:st.street||0, board:(st.board||[]).slice(), pot:st.pot||0,
+      currentBet:st.currentBet||0, lastRaise:st.lastRaise||roomCfg.bb, handOver:false, log:(st.log||[]) };
+  // 이번 판 참가자 = 홀카드를 가진 좌석 (좌석순)
+  G.live=Object.keys(hostHoles).filter(u=>st.players&&st.players[u]).sort((a,b)=>st.players[a].seat-st.players[b].seat);
+  G.players={};
+  for(const uid of G.live){
+    const p=st.players[uid];
+    G.players[uid]={uid, name:p.name, seat:p.seat, stack:p.stack, sc:p.sc||0, tc:p.tc||0,
+      folded:!!p.folded, allin:!!p.allin, acted:!!p.acted, lastAct:p.lastAct||'', pos:p.pos||'', show:!!p.show, hole:hostHoles[uid]};
+  }
+  G.bank={}; for(const uid in st.players) G.bank[uid]=st.players[uid].stack;
+  G.button = (st.button!=null && st.players[st.button]) ? st.players[st.button].seat : G.players[G.live[0]].seat;
+  G.turnIdx = Math.max(0, G.live.indexOf(st.turn));
+  hlog('— 방장 재접속: 진행 중이던 판을 그대로 이어갑니다 —','hd');
+  hostWriteState();
+  hostAdvance();   // 현재 차례부터 액션 타이머 재개
 }
 function seatOrderArr(){
   return Object.entries(hostSeats).map(([uid,s])=>({uid,seat:s.seat,name:s.name,online:s.online!==false}))
@@ -838,17 +898,20 @@ function hostAdvance(){
   for(let k=0;k<n;k++){ const p=G.players[G.live[i]]; if(!p.folded&&!p.allin&&!(p.acted&&p.sc===G.currentBet)){found=true;break;} i=(i+1)%n; }
   if(!found){ endStreet(); return; }
   G.turnIdx=i;
-  hostWriteState();
   const uid=G.live[i];
   const online = hostSeats[uid] && hostSeats[uid].online!==false;
-  if(!online){
-    clearTimeout(hostTimer);
+  // 대회 룰 액션 제한시간: 온라인=설정값(초), 오프라인=2.5초 빠른 처리
+  const limitMs = !online ? 2500 : (roomCfg.actionTimeout>0 ? roomCfg.actionTimeout*1000 : 0);
+  G.turnDeadline = (online && roomCfg.actionTimeout>0) ? (Date.now()+limitMs) : 0; // 카운트다운 표시용
+  clearTimeout(hostTimer);
+  hostWriteState();
+  if(limitMs>0){
     hostTimer=setTimeout(()=>{
       if(G.live[G.turnIdx]!==uid||G.handOver) return;
       const toCall=G.currentBet-G.players[uid].sc;
-      applyHostAction(uid, toCall>0?'fold':'check');
+      applyHostAction(uid, toCall>0?'fold':'check');   // 시간 초과: 콜 필요하면 폴드, 아니면 체크
       advanceTurn(); hostWriteState(); hostAdvance();
-    }, 2500);
+    }, limitMs);
   }
 }
 function endStreet(){
@@ -934,10 +997,13 @@ function hostWriteState(override){
   const state={
     handNo:G.handNo, street:G.street, board:G.board, pot:G.pot, currentBet:G.currentBet, lastRaise:G.lastRaise,
     button:G.live[idxOf(G.button)], turn:(G.handOver?null:G.live[G.turnIdx]), handOver:G.handOver,
+    turnDeadline:(G.handOver?0:(G.turnDeadline||0)),
     seatOrder:order, players:pub, log:G.log, centerMsg:G.centerMsg||''
   };
   G.centerMsg='';
   db.ref('rooms/'+roomId+'/state').set(state);
+  // 덱·홀카드를 방장 브라우저에만 저장 (새로고침 시 진행 중 판 복원용; DB엔 안 올림)
+  try{ localStorage.setItem('poker_hg_'+roomId, JSON.stringify({handNo:G.handNo, deck:hostDeck, holes:hostHoles})); }catch(e){}
 }
 
 window.addEventListener('load', ()=>{
