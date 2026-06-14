@@ -82,6 +82,14 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 #log{flex:1; overflow-y:auto; padding:4px 14px 10px; font-size:12px; line-height:1.7; color:#b9c2cc;}
 #log .hd{color:var(--gold); font-weight:600; margin-top:6px;}
 #log .win{color:#9fd49f;}
+#chatWrap{height:42%; min-height:150px; border-top:1px solid var(--line); display:flex; flex-direction:column;}
+#chat{flex:1; overflow-y:auto; padding:4px 14px; font-size:12px; line-height:1.6; color:#cdd5de;}
+#chat div{margin:2px 0; word-break:break-word;}
+#chat b{color:var(--gold); font-weight:600;}
+#chat .mine b{color:#9fc2ff;}
+#chatBar{display:flex; gap:6px; padding:8px 10px; border-top:1px solid var(--line);}
+#chatBar input{flex:1; padding:7px;}
+#chatBar button{padding:7px 12px; font-size:13px;}
 
 #actionBar{background:var(--panel); border-top:1px solid var(--line); padding:11px 16px; min-height:84px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
 #raiseCtl{display:flex; align-items:center; gap:8px;}
@@ -186,6 +194,14 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
   <div id="sidePanel">
     <h3>핸드 기록</h3>
     <div id="log"></div>
+    <div id="chatWrap">
+      <h3>채팅</h3>
+      <div id="chat"></div>
+      <div id="chatBar">
+        <input id="chatInput" maxlength="200" placeholder="메시지 입력 후 Enter" autocomplete="off">
+        <button id="chatSend">전송</button>
+      </div>
+    </div>
   </div>
 </div>
 <div id="actionBar">
@@ -203,7 +219,8 @@ const $=id=>document.getElementById(id);
 /* ===================== 카드 / 핸드 평가 (트레이너 엔진 재사용) ===================== */
 const RANK_CH='23456789TJQKA', SUIT_CH=['♠','♥','♦','♣'];
 const rk=c=>c>>2, st=c=>c&3;
-const cardStr=c=>RANK_CH[rk(c)]+SUIT_CH[st(c)];
+const rankDisp=r=>r===8?'10':RANK_CH[r];   // T 대신 10 표기
+const cardStr=c=>rankDisp(rk(c))+SUIT_CH[st(c)];
 const isRed=c=>st(c)===1||st(c)===2;
 function eval5(cs){
   const rs=cs.map(rk).sort((a,b)=>b-a);
@@ -317,7 +334,7 @@ $('tabJoin').onclick=()=>{ $('tabJoin').classList.add('on');$('tabCreate').class
 $('nameInput').value=localStorage.getItem(LS_NAME)||'';
 
 /* ===================== 방 생성 / 참가 ===================== */
-let roomId=null, isHost=false, mySeat=-1, roomCfg=null;
+let roomId=null, isHost=false, mySeat=-1, roomCfg=null, myName='';
 
 function randCode(){ const ch='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<4;i++)s+=ch[Math.floor(Math.random()*ch.length)]; return s; }
 
@@ -355,6 +372,7 @@ $('btnJoin').onclick=async()=>{
 };
 
 async function takeSeat(name, seat){
+  myName=name;
   const ref=db.ref('rooms/'+roomId+'/seats/'+myUid);
   await ref.set({name, seat, online:true, joinedAt:firebase.database.ServerValue.TIMESTAMP});
   ref.onDisconnect().update({online:false});
@@ -383,6 +401,7 @@ function enterRoom(){
   });
   db.ref('rooms/'+roomId+'/state').on('value', snap=>{ if(snap.exists()) renderTable(snap.val()); });
   db.ref('rooms/'+roomId+'/private/'+myUid).on('value', snap=>{ myHole = snap.val()?snap.val().hole:null; if(lastState) renderTable(lastState); });
+  db.ref('rooms/'+roomId+'/chat').limitToLast(60).on('value', snap=>renderChat(snap.val()||{}));
   setInterval(()=>{ if(roomId) db.ref('rooms/'+roomId+'/seats/'+myUid+'/online').set(true); }, 15000);
 }
 function renderLobby(seats){
@@ -398,6 +417,20 @@ $('codeDisp').onclick=()=>{
   $('waitMsg2').textContent=isWeb?'참가 링크 복사됨! 친구에게 보내세요.':'코드 복사됨! (웹에 올리면 링크로 공유돼요)';
 };
 function esc(s){ return String(s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])); }
+
+/* ----- 채팅 ----- */
+function renderChat(obj){
+  const arr=Object.values(obj).sort((a,b)=>(a.ts||0)-(b.ts||0));
+  $('chat').innerHTML=arr.map(m=>`<div class="${m.uid===myUid?'mine':''}"><b>${esc(m.name)}:</b> ${esc(m.text)}</div>`).join('');
+  $('chat').scrollTop=$('chat').scrollHeight;
+}
+function sendChat(){
+  const inp=$('chatInput'); const t=(inp.value||'').trim(); if(!t||!roomId) return;
+  db.ref('rooms/'+roomId+'/chat').push({uid:myUid, name:myName||localStorage.getItem(LS_NAME)||'익명', text:t, ts:Date.now()});
+  inp.value='';
+}
+$('chatSend').onclick=sendChat;
+$('chatInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChat(); } });
 
 $('btnStartGame').onclick=()=>{
   if(!isHost) return;
@@ -415,7 +448,7 @@ $('btnLeave').onclick=async()=>{
 let lastState=null, myHole=null;
 function pcardHTML(c, big, faceDown){
   if(faceDown||c==null) return `<div class="pcard back ${big?'big':''}"></div>`;
-  return `<div class="pcard ${isRed(c)?'red':''} ${big?'big':''}">${RANK_CH[rk(c)]}<span>${SUIT_CH[st(c)]}</span></div>`;
+  return `<div class="pcard ${isRed(c)?'red':''} ${big?'big':''}">${rankDisp(rk(c))}<span>${SUIT_CH[st(c)]}</span></div>`;
 }
 function renderTable(s){
   lastState=s;
