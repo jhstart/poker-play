@@ -104,16 +104,17 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 
 /* ================= 모바일 레이아웃 ================= */
 @media (max-width:640px){
-  header{gap:6px 10px; padding:7px 10px; flex-wrap:wrap;}
-  header h1{font-size:14px;}
+  html,body{height:100vh; height:100dvh;}   /* 모바일 주소창 영역까지 정확히 맞춤 */
+  header{gap:5px 8px; padding:6px 10px; flex-wrap:wrap;}
+  header h1{font-size:13px;}
   header .stat{font-size:11px;}
   header .right{gap:6px;}
-  header button{padding:7px 10px; font-size:12px;}
+  header button{padding:6px 10px; font-size:12px;}
 
-  #main{flex-direction:column;}
-  #tableWrap{min-width:0; flex:1;}
-  #table{width:94%; top:47%; aspect-ratio:1.25; border-width:10px;}
-  .seat{width:90px;}
+  #main{flex-direction:column; min-height:0;}
+  #tableWrap{min-width:0; flex:1; min-height:0;}
+  #table{width:97%; top:45%; aspect-ratio:1.12; border-width:9px;}
+  .seat{width:84px;}
   .seat .box{padding:4px 5px;}
   .seat .nm{font-size:11px;}
   .seat .stk{font-size:11px;}
@@ -132,18 +133,19 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
     transition:transform .25s ease; z-index:30; box-shadow:0 -6px 20px rgba(0,0,0,.55);}
   #sidePanel.open{transform:translateY(0);}
   #chatFab{display:flex; position:fixed; right:14px; bottom:92px; z-index:31;
-    width:48px; height:48px; border-radius:50%; align-items:center; justify-content:center;
-    font-size:22px; background:#3a5a8a; border:1px solid #5077ab; padding:0;}
+    width:46px; height:46px; border-radius:50%; align-items:center; justify-content:center;
+    font-size:21px; background:#3a5a8a; border:1px solid #5077ab; padding:0;}
+  body.acting #chatFab{display:none;}   /* 내 차례(베팅 중)엔 채팅 버튼 숨김 */
   #chatClose{display:inline-block; cursor:pointer; color:var(--dim); font-size:18px; padding:0 6px;}
 
-  /* 액션바: 큰 버튼 + 줄바꿈 */
-  #actionBar{padding:9px 10px; gap:7px; min-height:72px;}
-  #actionBar>button{flex:1 1 0; padding:13px 8px; font-size:15px;}
-  #raiseCtl{flex:1 1 100%; flex-wrap:wrap; gap:6px;}
+  /* 액션바: 베팅 컨트롤을 위로, 폴드/체크를 아래로 */
+  #actionBar{padding:9px 10px; gap:7px; min-height:72px; align-content:flex-end;}
+  #actionBar>button{order:2; flex:1 1 0; padding:13px 8px; font-size:15px;}
+  #raiseCtl{order:1; flex:1 1 100%; flex-wrap:wrap; gap:6px; justify-content:center;}
   #raiseCtl input[type=range]{width:100%; order:-1;}
   #raiseAmt{width:66px;}
   #raiseCtl button.raise{flex:1 1 auto;}
-  .quick{padding:9px 10px; font-size:12px;}
+  .quick{flex:1 1 auto; padding:9px 6px; font-size:12px;}
 }
 </style>
 </head>
@@ -548,7 +550,7 @@ function renderTable(s){
   const mine=seatList.find(x=>x.uid===myUid);
   const myIdx=mine?mine.seat:0;
   const small=window.innerWidth<=640;
-  const rx=small?33:41, ry=small?41:43;   // 모바일에선 좌석을 안쪽으로 모아 화면에 맞춤
+  const rx=small?34:41, ry=small?40:43;   // 모바일에선 좌석을 안쪽으로 모아 화면에 맞춤
   for(const sd of seatList){
     const pl=s.players?s.players[sd.uid]:null;
     const rel=((sd.seat - myIdx)+N)%N;
@@ -594,6 +596,7 @@ function renderTable(s){
 }
 function renderActionBar(s){
   const bar=$('actionBar');
+  document.body.classList.remove('acting');
   if(s.gameOver){
     bar.innerHTML=`<span id="waitMsg">🏆 ${esc(s.winnerName||'')} 우승 — 게임 종료!</span>`
       + (isHost?`<span id="hostCtl"><button class="primary" onclick="hostRestart()">다시 시작</button></span>`
@@ -608,6 +611,7 @@ function renderActionBar(s){
     bar.innerHTML=`<span id="waitMsg">${m}</span>`+(isHost&&s.handOver?`<span id="hostCtl"><button class="primary" onclick="hostNextHand()">다음 핸드</button></span>`:'');
     return;
   }
+  document.body.classList.add('acting');
   const me=s.players[myUid];
   const toCall=s.currentBet - me.sc;
   const bb=roomCfg.bb;
