@@ -82,7 +82,7 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 #log{flex:1; overflow-y:auto; padding:4px 14px 10px; font-size:12px; line-height:1.7; color:#b9c2cc;}
 #log .hd{color:var(--gold); font-weight:600; margin-top:6px;}
 #log .win{color:#9fd49f;}
-#chatWrap{height:42%; min-height:150px; border-top:1px solid var(--line); display:flex; flex-direction:column;}
+#chatWrap{flex:1; border-top:1px solid var(--line); display:flex; flex-direction:column;}
 #chat{flex:1; overflow-y:auto; padding:4px 14px; font-size:12px; line-height:1.6; color:#cdd5de;}
 #chat div{margin:2px 0; word-break:break-word;}
 #chat b{color:var(--gold); font-weight:600;}
@@ -98,6 +98,53 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 .quick{padding:6px 10px; font-size:12px;}
 #waitMsg{color:var(--dim); font-size:14px;}
 #hostCtl{margin-left:auto; display:flex; gap:8px;}
+#chatFab{display:none;}
+.chat-hd{display:flex; justify-content:space-between; align-items:center;}
+#chatClose{display:none;}
+
+/* ================= 모바일 레이아웃 ================= */
+@media (max-width:640px){
+  header{gap:6px 10px; padding:7px 10px; flex-wrap:wrap;}
+  header h1{font-size:14px;}
+  header .stat{font-size:11px;}
+  header .right{gap:6px;}
+  header button{padding:7px 10px; font-size:12px;}
+
+  #main{flex-direction:column;}
+  #tableWrap{min-width:0; flex:1;}
+  #table{width:94%; top:47%; aspect-ratio:1.25; border-width:10px;}
+  .seat{width:90px;}
+  .seat .box{padding:4px 5px;}
+  .seat .nm{font-size:11px;}
+  .seat .stk{font-size:11px;}
+  .seat .act{font-size:10px;}
+  .seat .pos{font-size:9px; padding:1px 4px;}
+  .bet-chip{font-size:11px;}
+  .pcard{width:26px; height:37px; font-size:12px;}
+  .pcard.big{width:34px; height:48px; font-size:15px;}
+  #board{gap:4px;}
+  #potLbl{font-size:13px;}
+  #centerMsg{font-size:13px; top:26%;}
+
+  /* 채팅: 하단 슬라이드 패널 (💬로 열고 닫기) */
+  #sidePanel{position:fixed; left:0; right:0; bottom:0; width:auto; height:58%;
+    border-left:none; border-top:1px solid var(--line); transform:translateY(100%);
+    transition:transform .25s ease; z-index:30; box-shadow:0 -6px 20px rgba(0,0,0,.55);}
+  #sidePanel.open{transform:translateY(0);}
+  #chatFab{display:flex; position:fixed; right:14px; bottom:92px; z-index:31;
+    width:48px; height:48px; border-radius:50%; align-items:center; justify-content:center;
+    font-size:22px; background:#3a5a8a; border:1px solid #5077ab; padding:0;}
+  #chatClose{display:inline-block; cursor:pointer; color:var(--dim); font-size:18px; padding:0 6px;}
+
+  /* 액션바: 큰 버튼 + 줄바꿈 */
+  #actionBar{padding:9px 10px; gap:7px; min-height:72px;}
+  #actionBar>button{flex:1 1 0; padding:13px 8px; font-size:15px;}
+  #raiseCtl{flex:1 1 100%; flex-wrap:wrap; gap:6px;}
+  #raiseCtl input[type=range]{width:100%; order:-1;}
+  #raiseAmt{width:66px;}
+  #raiseCtl button.raise{flex:1 1 auto;}
+  .quick{padding:9px 10px; font-size:12px;}
+}
 </style>
 </head>
 <body>
@@ -192,10 +239,8 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
     <div id="centerMsg"></div>
   </div>
   <div id="sidePanel">
-    <h3>핸드 기록</h3>
-    <div id="log"></div>
     <div id="chatWrap">
-      <h3>채팅</h3>
+      <h3 class="chat-hd">채팅 <span id="chatClose">✕</span></h3>
       <div id="chat"></div>
       <div id="chatBar">
         <input id="chatInput" maxlength="200" placeholder="메시지 입력 후 Enter" autocomplete="off">
@@ -207,6 +252,7 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 <div id="actionBar">
   <span id="waitMsg">대기 중…</span>
 </div>
+<button id="chatFab" aria-label="채팅 열기">💬</button>
 
 <!-- Firebase compat SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -268,7 +314,18 @@ const EMBEDDED_CFG = {
   appId: "1:721558880217:web:9860bb9fbf1f48a5d023c8"
 };
 let db=null, auth=null, myUid=null;
-const LS_CFG='poker_fb_cfg', LS_NAME='poker_name';
+const LS_CFG='poker_fb_cfg', LS_NAME='poker_name', LS_ROOM='poker_room';
+let wakeLock=null;
+// 화면 꺼짐 방지 (모바일 방장이 절전으로 멈추는 것 완화)
+async function requestWakeLock(){
+  try{ if('wakeLock' in navigator){ wakeLock=await navigator.wakeLock.request('screen'); } }catch(e){}
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible'){
+    requestWakeLock();
+    if(isHost && roomId && !hostActionRef && roomCfg && roomCfg.status==='playing') hostResume();
+  }
+});
 
 function initFirebase(cfg){
   if(firebase.apps.length) return true;
@@ -288,12 +345,12 @@ function hideScreen(){ $('screen').style.display='none'; }
 function bootSetup(){
   // 1순위: 파일에 박아둔 설정 → 설정 화면 건너뛰고 바로 로비
   if(EMBEDDED_CFG && EMBEDDED_CFG.databaseURL && !EMBEDDED_CFG.databaseURL.includes('....')){
-    try{ initFirebase(EMBEDDED_CFG); signInThen(()=>showScreen('joinCard')); return; }
+    try{ initFirebase(EMBEDDED_CFG); signInThen(tryAutoRejoin); return; }
     catch(e){}
   }
   const saved=localStorage.getItem(LS_CFG);
   if(saved){
-    try{ initFirebase(JSON.parse(saved)); signInThen(()=>showScreen('joinCard')); return; }
+    try{ initFirebase(JSON.parse(saved)); signInThen(tryAutoRejoin); return; }
     catch(e){ localStorage.removeItem(LS_CFG); }
   }
   showScreen('setupCard');
@@ -305,6 +362,27 @@ function applyRoomFromURL(){
     $('tabJoin').click();
     $('codeInput').value=code.toUpperCase();
   }
+}
+// 새로고침/재접속 시 이전 방으로 자동 복귀 (방장이면 게임 엔진 자동 재개)
+async function tryAutoRejoin(){
+  const urlRoom=new URLSearchParams(location.search).get('room');
+  const code=localStorage.getItem(LS_ROOM);
+  if(code && !urlRoom){
+    try{
+      const metaSnap=await db.ref('rooms/'+code+'/meta').get();
+      const seatSnap=await db.ref('rooms/'+code+'/seats/'+myUid).get();
+      if(metaSnap.exists() && seatSnap.exists()){
+        roomId=code; roomCfg=metaSnap.val(); isHost=(roomCfg.host===myUid);
+        mySeat=seatSnap.val().seat; myName=seatSnap.val().name;
+        // 재접속 표시 + 끊겼던 동안 onDisconnect로 offline 됐을 수 있으니 복구
+        await db.ref('rooms/'+code+'/seats/'+myUid+'/online').set(true);
+        enterRoom();
+        return;
+      }
+    }catch(e){}
+    localStorage.removeItem(LS_ROOM);
+  }
+  showScreen('joinCard');
 }
 function signInThen(cb){
   auth.onAuthStateChanged(u=>{ if(u){ myUid=u.uid; cb(); } });
@@ -324,7 +402,7 @@ $('btnSaveCfg').onclick=()=>{
   try{ initFirebase(cfg); }catch(e){ $('cfgMsg').className='msg err'; $('cfgMsg').textContent='초기화 실패: '+e.message; return; }
   localStorage.setItem(LS_CFG, JSON.stringify(cfg));
   $('cfgMsg').className='msg ok'; $('cfgMsg').textContent='연결 중…';
-  signInThen(()=>showScreen('joinCard'));
+  signInThen(tryAutoRejoin);
 };
 $('resetCfg').onclick=e=>{ e.preventDefault(); localStorage.removeItem(LS_CFG); location.reload(); };
 
@@ -382,17 +460,24 @@ function joinErr(m){ $('joinMsg').className='msg err'; $('joinMsg').textContent=
 
 /* ===================== 대기실 ===================== */
 function enterRoom(){
+  localStorage.setItem(LS_ROOM, roomId);   // 새로고침 시 자동 복귀용
+  requestWakeLock();
   $('codeDisp').textContent=roomId;
   $('hRoom').textContent=roomId;
   showScreen('waitCard');
   db.ref('rooms/'+roomId+'/meta').on('value', snap=>{
-    if(!snap.exists()){ alert('방이 사라졌습니다.'); location.reload(); return; }
+    if(!snap.exists()){ alert('방이 사라졌습니다.'); localStorage.removeItem(LS_ROOM); location.reload(); return; }
     roomCfg=snap.val();
     isHost=(roomCfg.host===myUid);
     $('hBlinds').textContent=roomCfg.sb+'/'+roomCfg.bb;
     $('hRole').textContent=isHost?'👑 방장':'참가자';
     $('btnStartGame').style.display=(isHost&&roomCfg.status==='lobby')?'block':'none';
-    if(roomCfg.status==='playing' && $('screen').style.display!=='none'){ hideScreen(); }
+    if(roomCfg.status==='playing'){
+      if($('screen').style.display!=='none') hideScreen();
+      requestWakeLock();
+      // 방장이고 엔진이 안 돌고 있으면(=새로고침으로 끊김) 자동 재개
+      if(isHost && !hostActionRef) hostResume();
+    }
   });
   db.ref('rooms/'+roomId+'/seats').on('value', snap=>{
     const seats=snap.val()||{};
@@ -431,15 +516,19 @@ function sendChat(){
 }
 $('chatSend').onclick=sendChat;
 $('chatInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChat(); } });
+$('chatFab').onclick=()=>$('sidePanel').classList.add('open');
+$('chatClose').onclick=()=>$('sidePanel').classList.remove('open');
 
 $('btnStartGame').onclick=()=>{
   if(!isHost) return;
   const n=Object.keys(hostSeats||{}).length;
   if(n<2){ $('waitMsg2').className='msg err'; $('waitMsg2').textContent='최소 2명이 필요합니다.'; return; }
+  requestWakeLock();
+  hostStartGame();                                  // 엔진 먼저 켜서 리스너 부착(중복 시작 방지)
   db.ref('rooms/'+roomId+'/meta/status').set('playing');
-  hostStartGame();
 };
 $('btnLeave').onclick=async()=>{
+  localStorage.removeItem(LS_ROOM);
   if(roomId){ await db.ref('rooms/'+roomId+'/seats/'+myUid).remove().catch(()=>{}); }
   location.reload();
 };
@@ -458,12 +547,14 @@ function renderTable(s){
   const N=roomCfg?roomCfg.maxSeats:seatList.length;
   const mine=seatList.find(x=>x.uid===myUid);
   const myIdx=mine?mine.seat:0;
+  const small=window.innerWidth<=640;
+  const rx=small?33:41, ry=small?41:43;   // 모바일에선 좌석을 안쪽으로 모아 화면에 맞춤
   for(const sd of seatList){
     const pl=s.players?s.players[sd.uid]:null;
     const rel=((sd.seat - myIdx)+N)%N;
     const ang=Math.PI/2 + rel/N*2*Math.PI;
-    const x=50 + 41*Math.cos(ang);
-    const y=50 + 43*Math.sin(ang);
+    const x=50 + rx*Math.cos(ang);
+    const y=50 + ry*Math.sin(ang);
     const div=document.createElement('div');
     div.className='seat';
     if(sd.uid===myUid) div.classList.add('me');
@@ -499,11 +590,16 @@ function renderTable(s){
   $('board').innerHTML=(s.board||[]).map(c=>pcardHTML(c,true,false)).join('');
   $('potLbl').textContent=(s.pot>0||(s.board&&s.board.length))?('팟 '+(s.pot||0)):'';
   $('centerMsg').textContent=s.centerMsg||'';
-  if(s.log){ $('log').innerHTML=s.log.map(l=>`<div class="${l.cls||''}">${esc(l.t)}</div>`).join(''); $('log').scrollTop=$('log').scrollHeight; }
   renderActionBar(s);
 }
 function renderActionBar(s){
   const bar=$('actionBar');
+  if(s.gameOver){
+    bar.innerHTML=`<span id="waitMsg">🏆 ${esc(s.winnerName||'')} 우승 — 게임 종료!</span>`
+      + (isHost?`<span id="hostCtl"><button class="primary" onclick="hostRestart()">다시 시작</button></span>`
+              :`<span id="hostCtl" style="margin-left:auto;color:var(--dim)">방장이 '다시 시작'을 누르면 새 게임이 시작돼요</span>`);
+    return;
+  }
   const myTurn=(s.turn===myUid && !s.handOver && s.players && s.players[myUid] && !s.players[myUid].folded && !s.players[myUid].allin);
   if(!myTurn){
     let m='대기 중…';
@@ -554,31 +650,72 @@ let hostSeats=null, hostDeck=[], hostHoles={}, G=null, hostActionRef=null, hostT
 
 function hostOnSeats(seats){ hostSeats=seats; if(roomCfg && roomCfg.status==='lobby') renderLobby(seats); }
 
+function hostAttachActions(){
+  if(hostActionRef) return;
+  hostActionRef=db.ref('rooms/'+roomId+'/actions');
+  hostActionRef.on('child_added', snap=>hostHandleAction(snap.key, snap.val()));
+  hostActionRef.on('child_changed', snap=>hostHandleAction(snap.key, snap.val()));
+}
 function hostStartGame(){
   if(!isHost) return;
-  if(!hostActionRef){
-    hostActionRef=db.ref('rooms/'+roomId+'/actions');
-    hostActionRef.on('child_added', snap=>hostHandleAction(snap.key, snap.val()));
-    hostActionRef.on('child_changed', snap=>hostHandleAction(snap.key, snap.val()));
-  }
+  hostAttachActions();
   G={button:-1, handNo:0};
+  hostNextHand();
+}
+// 방장이 새로고침/일시정지 후 돌아왔을 때 게임 재개 (마지막 스택 복원, 다음 핸드부터 진행)
+async function hostResume(){
+  if(!isHost || hostActionRef) return;
+  hostAttachActions();
+  let st=null;
+  try{ const snap=await db.ref('rooms/'+roomId+'/state').get(); if(snap.exists()) st=snap.val(); }catch(e){}
+  await db.ref('rooms/'+roomId+'/actions').remove().catch(()=>{});  // 오래된 액션 큐 비우기
+  G={button:-1, handNo:(st&&st.handNo)||0, recoverStacks:{}};
+  if(st && st.players){
+    for(const uid in st.players){ G.recoverStacks[uid]=st.players[uid].stack; }
+    if(st.button!=null && st.players[st.button]) G.button=st.players[st.button].seat;
+  }
+  G.log=(st&&st.log)||[];
+  hlog('— 방장 재접속: 다음 핸드부터 이어갑니다 —','hd');
   hostNextHand();
 }
 function seatOrderArr(){
   return Object.entries(hostSeats).map(([uid,s])=>({uid,seat:s.seat,name:s.name,online:s.online!==false}))
     .sort((a,b)=>a.seat-b.seat);
 }
+function hostRestart(){
+  if(!isHost) return;
+  hostAttachActions();
+  clearTimeout(hostTimer);
+  G={button:-1, handNo:0, bank:{}, log:[]};
+  hlog('— 새 게임 시작 —','hd');
+  hostNextHand();
+}
 function hostNextHand(){
   if(!isHost) return;
   clearTimeout(hostTimer);
   const order=seatOrderArr();
-  let active=order.filter(o=>{
-    const prev=G.players&&G.players[o.uid];
-    let stack=prev?prev.stack:roomCfg.startStack;
-    if(roomCfg.autoRebuy && stack<roomCfg.bb) stack=roomCfg.startStack;
-    o.stack=stack; return stack>=roomCfg.bb;
-  });
-  if(active.length<2){ hostWriteState({handNo:G.handNo,handOver:true, centerMsg:'플레이어가 부족합니다', seatOrder:order.map(o=>({uid:o.uid,seat:o.seat,name:o.name,online:o.online})), players:{}, board:[], pot:0, log:G.log||[]}); return; }
+  if(!G.bank) G.bank={};
+  // 직전 핸드 결과를 뱅크(누적 스택)에 반영
+  if(G.players){ for(const uid in G.players) G.bank[uid]=G.players[uid].stack; }
+  // 신규 좌석 초기 스택 (재접속 복구값 우선, 없으면 시작 스택)
+  for(const o of order){
+    if(G.bank[o.uid]==null) G.bank[o.uid]=(G.recoverStacks&&G.recoverStacks[o.uid]!=null)?G.recoverStacks[o.uid]:roomCfg.startStack;
+  }
+  G.recoverStacks=null;
+  // 칩이 남은 사람만 (0이면 탈락 — 리바이 없음)
+  let active=order.filter(o=>G.bank[o.uid]>0);
+  active.forEach(o=>o.stack=G.bank[o.uid]);
+  // 생존 1명 이하 → 토너먼트 종료, 우승자 발표
+  if(active.length<=1){
+    const w=active[0];
+    G.handOver=true; G.gameOver=true;
+    const pls={};
+    for(const o of order) pls[o.uid]={name:o.name,seat:o.seat,stack:G.bank[o.uid]||0,sc:0,tc:0,folded:true,allin:false,acted:false,lastAct:(G.bank[o.uid]>0?'🏆 우승':'💀 탈락'),pos:'',show:false,out:(G.bank[o.uid]<=0)};
+    hostWriteState({gameOver:true, winnerName:(w?w.name:''), handNo:G.handNo, handOver:true,
+      seatOrder:order.map(o=>({uid:o.uid,seat:o.seat,name:o.name,online:o.online})),
+      players:pls, board:[], pot:0, centerMsg:(w?('🏆 '+w.name+' 우승!'):'게임 종료'), log:G.log||[]});
+    return;
+  }
 
   G.handNo++; G.street=0; G.board=[]; G.pot=0; G.currentBet=roomCfg.bb; G.lastRaise=roomCfg.bb; G.handOver=false;
   G.log=(G.log||[]).slice(-40);
@@ -767,6 +904,15 @@ function hostWriteState(override){
     const p=G.players[uid];
     pub[uid]={name:p.name,seat:p.seat,stack:p.stack,sc:p.sc,tc:p.tc,folded:p.folded,allin:p.allin,acted:p.acted,lastAct:p.lastAct,pos:p.pos,show:!!p.show};
     if(p.show&&p.hole) pub[uid].hole=p.hole;
+  }
+  // 이번 핸드에 빠진 좌석(탈락/대기)도 표시
+  if(G.bank){
+    for(const o of seatOrderArr()){
+      if(!pub[o.uid]){
+        const stk=G.bank[o.uid]||0;
+        pub[o.uid]={name:o.name,seat:o.seat,stack:stk,sc:0,tc:0,folded:true,allin:false,acted:false,lastAct:(stk>0?'대기':'💀 탈락'),pos:'',show:false,out:stk<=0};
+      }
+    }
   }
   const state={
     handNo:G.handNo, street:G.street, board:G.board, pot:G.pot, currentBet:G.currentBet, lastRaise:G.lastRaise,
