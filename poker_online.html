@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>온라인 포커 — 친구와 함께 (NLHE)</title>
+<style>
+:root{
+  --felt:#1a6b3c; --felt-dark:#0e4426; --bg:#101418; --panel:#1b2128;
+  --gold:#e8c264; --red:#e05555; --text:#e8eaed; --dim:#8a939e; --line:#2a323c;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{background:var(--bg); color:var(--text); font-family:'Segoe UI',Pretendard,sans-serif; height:100vh; overflow:hidden; display:flex; flex-direction:column;}
+button{background:#2e3947; color:var(--text); border:1px solid #46535f; border-radius:8px; padding:9px 16px; font-size:14px; cursor:pointer; font-weight:600;}
+button:hover{background:#3a4757;}
+button:disabled{opacity:.4; cursor:default;}
+button.primary{background:#3a5a8a; border-color:#5077ab;}
+button.fold{background:#5a2e2e; border-color:#7a4040;}
+button.call{background:#2e4a38; border-color:#3f6a4e;}
+button.raise{background:#5a4a22; border-color:#8a7138;}
+input,select{background:#10151b; border:1px solid #46535f; color:var(--text); border-radius:6px; padding:9px; font-size:14px;}
+a{color:var(--gold);}
+
+/* ---------- 오버레이 화면 (설정/로비) ---------- */
+#screen{position:fixed; inset:0; background:var(--bg); z-index:40; display:flex; align-items:center; justify-content:center; padding:20px; overflow-y:auto;}
+.card-box{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:28px 32px; width:min(460px,94vw);}
+.card-box h2{color:var(--gold); font-size:21px; margin-bottom:6px;}
+.card-box p.sub{color:var(--dim); font-size:13px; line-height:1.6; margin-bottom:16px;}
+.field{margin-bottom:14px;}
+.field label{display:block; font-size:12px; color:var(--dim); margin-bottom:5px;}
+.field input,.field select,.field textarea{width:100%;}
+.field textarea{height:120px; font-family:monospace; font-size:12px; resize:vertical;}
+.row{display:flex; gap:10px;}
+.row>*{flex:1;}
+.btn-full{width:100%; padding:12px; font-size:15px; margin-top:6px;}
+.tab-sw{display:flex; gap:8px; margin-bottom:18px;}
+.tab-sw button{flex:1; background:#252d36;}
+.tab-sw button.on{background:#3a5a8a; border-color:#5077ab;}
+.msg{font-size:13px; margin-top:10px; min-height:18px;}
+.msg.err{color:var(--red);} .msg.ok{color:#9fd49f;}
+.hint{font-size:12px; color:var(--dim); margin-top:14px; line-height:1.6;}
+#lobbyPlayers{list-style:none; margin:12px 0;}
+#lobbyPlayers li{padding:8px 12px; background:#252d36; border-radius:8px; margin-bottom:6px; font-size:14px; display:flex; justify-content:space-between;}
+#lobbyPlayers li .seat-n{color:var(--dim); font-size:12px;}
+.code-disp{font-size:30px; font-weight:800; letter-spacing:5px; color:var(--gold); text-align:center; background:#10151b; border:1px dashed #46535f; border-radius:10px; padding:14px; margin:10px 0; cursor:pointer;}
+
+/* ---------- 게임 테이블 ---------- */
+header{display:flex; align-items:center; gap:14px; padding:9px 16px; background:var(--panel); border-bottom:1px solid var(--line);}
+header h1{font-size:16px; color:var(--gold);}
+header .stat{font-size:12px; color:var(--dim);} header .stat b{color:var(--text);}
+header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
+#main{flex:1; display:flex; min-height:0;}
+#tableWrap{flex:1; position:relative; min-width:560px;}
+#table{position:absolute; left:50%; top:48%; transform:translate(-50%,-50%); width:min(80%,860px); aspect-ratio:1.85;
+  background:radial-gradient(ellipse at center, var(--felt) 0%, var(--felt-dark) 100%);
+  border-radius:50%/55%; border:14px solid #3d2b1f; box-shadow:0 10px 40px rgba(0,0,0,.6), inset 0 0 60px rgba(0,0,0,.35);}
+.seat{position:absolute; width:150px; transform:translate(-50%,-50%); text-align:center; transition:opacity .25s;}
+.seat .box{background:rgba(10,14,18,.85); border:2px solid #333d48; border-radius:10px; padding:6px 8px; position:relative;}
+.seat.active .box{border-color:var(--gold); box-shadow:0 0 12px rgba(232,194,100,.55);}
+.seat.me .box{border-color:#5077ab;}
+.seat.folded{opacity:.36;}
+.seat .nm{font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.seat .stk{font-size:12px; color:var(--gold);}
+.seat .act{font-size:11px; color:#9fd49f; min-height:14px;}
+.seat .pos{position:absolute; top:-9px; right:-6px; background:#2a323c; color:var(--dim); font-size:10px; padding:1px 6px; border-radius:8px;}
+.seat .off{position:absolute; top:-9px; left:-6px; background:#5a2e2e; color:#e7b3b3; font-size:9px; padding:1px 5px; border-radius:8px; display:none;}
+.seat.offline .off{display:block;}
+.seat .btn-disc{position:absolute; top:-10px; left:50%; transform:translateX(-50%); background:#fff; color:#111; font-size:10px; font-weight:700; width:20px; height:20px; line-height:20px; border-radius:50%; display:none;}
+.seat.dealer .btn-disc{display:block;}
+.cards{display:flex; gap:4px; justify-content:center; margin:5px 0 2px;}
+.pcard{width:32px; height:46px; border-radius:5px; background:#fff; color:#111; font-weight:700; font-size:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.05; box-shadow:0 2px 4px rgba(0,0,0,.4);}
+.pcard.red{color:#cc2222;}
+.pcard.back{background:repeating-linear-gradient(45deg,#5a7ab8,#5a7ab8 4px,#4a66a0 4px,#4a66a0 8px); border:2px solid #dde;}
+.pcard.big{width:46px; height:64px; font-size:19px;}
+.bet-chip{font-size:12px; color:#ffd97a; margin-top:3px; min-height:15px; text-shadow:0 1px 2px #000;}
+#board{position:absolute; left:50%; top:43%; transform:translate(-50%,-50%); display:flex; gap:7px;}
+#potLbl{position:absolute; left:50%; top:61%; transform:translateX(-50%); font-size:15px; color:#ffd97a; text-shadow:0 1px 3px #000; font-weight:600; white-space:nowrap;}
+#centerMsg{position:absolute; left:50%; top:30%; transform:translateX(-50%); font-size:15px; color:var(--gold); text-shadow:0 1px 3px #000; font-weight:600; text-align:center; white-space:nowrap;}
+
+#sidePanel{width:280px; background:var(--panel); border-left:1px solid var(--line); display:flex; flex-direction:column;}
+#sidePanel h3{font-size:12px; color:var(--dim); padding:10px 14px 4px;}
+#log{flex:1; overflow-y:auto; padding:4px 14px 10px; font-size:12px; line-height:1.7; color:#b9c2cc;}
+#log .hd{color:var(--gold); font-weight:600; margin-top:6px;}
+#log .win{color:#9fd49f;}
+
+#actionBar{background:var(--panel); border-top:1px solid var(--line); padding:11px 16px; min-height:84px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+#raiseCtl{display:flex; align-items:center; gap:8px;}
+#raiseCtl input[type=range]{width:160px;}
+#raiseAmt{width:90px; text-align:right; color:var(--gold);}
+.quick{padding:6px 10px; font-size:12px;}
+#waitMsg{color:var(--dim); font-size:14px;}
+#hostCtl{margin-left:auto; display:flex; gap:8px;}
+</style>
+</head>
+<body>
+
+<!-- ============ 오버레이: 설정 / 로비 ============ -->
+<div id="screen">
+  <div class="card-box" id="setupCard">
+    <h2>♠ 온라인 포커</h2>
+    <p class="sub">친구와 실시간으로 즐기는 텍사스 홀덤(NLHE). 먼저 Firebase 연결을 1회 설정하세요. (가이드 파일 참고)</p>
+
+    <div id="cfgSection">
+      <div class="field">
+        <label>Firebase 설정 (config 객체 붙여넣기)</label>
+        <textarea id="cfgInput" placeholder='{
+  "apiKey": "...",
+  "authDomain": "....firebaseapp.com",
+  "databaseURL": "https://....firebasedatabase.app",
+  "projectId": "..."
+}'></textarea>
+      </div>
+      <button class="primary btn-full" id="btnSaveCfg">연결 저장</button>
+      <div class="msg" id="cfgMsg"></div>
+      <p class="hint">설정은 이 브라우저에만 저장됩니다. 한 번 저장하면 다음부터 건너뜁니다.
+        <a href="#" id="resetCfg">설정 초기화</a></p>
+    </div>
+  </div>
+
+  <!-- 로비 (이름 + 만들기/참가) -->
+  <div class="card-box" id="joinCard" style="display:none;">
+    <h2>♠ 온라인 포커</h2>
+    <p class="sub">닉네임을 정하고 방을 만들거나, 친구에게 받은 코드로 참가하세요.</p>
+    <div class="field">
+      <label>닉네임</label>
+      <input id="nameInput" maxlength="12" placeholder="예: 재학">
+    </div>
+    <div class="tab-sw">
+      <button id="tabCreate" class="on">방 만들기</button>
+      <button id="tabJoin">참가하기</button>
+    </div>
+
+    <div id="createPane">
+      <div class="row">
+        <div class="field"><label>최대 인원</label>
+          <select id="maxSeats"><option>2</option><option>3</option><option>4</option><option>5</option><option selected>6</option><option>7</option><option>8</option><option>9</option></select>
+        </div>
+        <div class="field"><label>시작 스택</label>
+          <select id="startStack"><option>1000</option><option selected>2000</option><option>5000</option><option>10000</option></select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field"><label>스몰 블라인드</label><input id="sbVal" type="number" value="10" min="1"></div>
+        <div class="field"><label>빅 블라인드</label><input id="bbVal" type="number" value="20" min="2"></div>
+      </div>
+      <button class="primary btn-full" id="btnCreate">방 만들기</button>
+    </div>
+
+    <div id="joinPane" style="display:none;">
+      <div class="field"><label>방 코드</label><input id="codeInput" maxlength="6" placeholder="예: 4F2K" style="text-transform:uppercase;"></div>
+      <button class="primary btn-full" id="btnJoin">참가하기</button>
+    </div>
+    <div class="msg" id="joinMsg"></div>
+  </div>
+
+  <!-- 대기실 -->
+  <div class="card-box" id="waitCard" style="display:none;">
+    <h2>대기실</h2>
+    <p class="sub">친구에게 아래 코드를 공유하세요. 모두 모이면 방장이 게임을 시작합니다.</p>
+    <div class="code-disp" id="codeDisp" title="클릭하면 복사">----</div>
+    <ul id="lobbyPlayers"></ul>
+    <button class="primary btn-full" id="btnStartGame" style="display:none;">게임 시작</button>
+    <div class="msg" id="waitMsg2"></div>
+    <p class="hint">방장(👑)이 게임을 진행합니다. 방장이 나가면 게임이 멈추니, 가장 연결이 안정적인 사람이 방을 만드세요.</p>
+  </div>
+</div>
+
+<!-- ============ 게임 화면 ============ -->
+<header>
+  <h1>♠ 온라인 포커</h1>
+  <span class="stat">방 <b id="hRoom">----</b></span>
+  <span class="stat">핸드 <b id="hHandNo">0</b></span>
+  <span class="stat">블라인드 <b id="hBlinds">10/20</b></span>
+  <div class="right">
+    <span class="stat" id="hRole"></span>
+    <button id="btnLeave">나가기</button>
+  </div>
+</header>
+<div id="main">
+  <div id="tableWrap">
+    <div id="table"></div>
+    <div id="board"></div>
+    <div id="potLbl"></div>
+    <div id="centerMsg"></div>
+  </div>
+  <div id="sidePanel">
+    <h3>핸드 기록</h3>
+    <div id="log"></div>
+  </div>
+</div>
+<div id="actionBar">
+  <span id="waitMsg">대기 중…</span>
+</div>
+
+<!-- Firebase compat SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+
+/* ===================== 카드 / 핸드 평가 (트레이너 엔진 재사용) ===================== */
+const RANK_CH='23456789TJQKA', SUIT_CH=['♠','♥','♦','♣'];
+const rk=c=>c>>2, st=c=>c&3;
+const cardStr=c=>RANK_CH[rk(c)]+SUIT_CH[st(c)];
+const isRed=c=>st(c)===1||st(c)===2;
+function eval5(cs){
+  const rs=cs.map(rk).sort((a,b)=>b-a);
+  const flush=cs.every(c=>st(c)===st(cs[0]));
+  const cnt={}; for(const r of rs) cnt[r]=(cnt[r]||0)+1;
+  const groups=Object.keys(cnt).map(r=>[+r,cnt[r]]).sort((a,b)=>b[1]-a[1]||b[0]-a[0]);
+  let sHigh=-1;
+  if(groups.length===5){
+    if(rs[0]-rs[4]===4) sHigh=rs[0];
+    else if(rs[0]===12&&rs[1]===3) sHigh=3; // A2345 휠
+  }
+  let cat,ks;
+  if(flush&&sHigh>=0){cat=8;ks=[sHigh];}
+  else if(groups[0][1]===4){cat=7;ks=[groups[0][0],groups[1][0]];}
+  else if(groups[0][1]===3&&groups[1][1]===2){cat=6;ks=[groups[0][0],groups[1][0]];}
+  else if(flush){cat=5;ks=rs;}
+  else if(sHigh>=0){cat=4;ks=[sHigh];}
+  else if(groups[0][1]===3){cat=3;ks=[groups[0][0],groups[1][0],groups[2][0]];}
+  else if(groups[0][1]===2&&groups[1][1]===2){cat=2;ks=[groups[0][0],groups[1][0],groups[2][0]];}
+  else if(groups[0][1]===2){cat=1;ks=[groups[0][0],groups[1][0],groups[2][0],groups[3][0]];}
+  else {cat=0;ks=rs;}
+  let v=cat; for(let i=0;i<5;i++) v=v*13+(ks[i]??0);
+  return v;
+}
+const C7=[];
+for(let a=0;a<3;a++)for(let b=a+1;b<4;b++)for(let c=b+1;c<5;c++)for(let d=c+1;d<6;d++)for(let e=d+1;e<7;e++)C7.push([a,b,c,d,e]);
+function eval7(cs){
+  let best=-1;
+  for(const ix of C7){ const v=eval5([cs[ix[0]],cs[ix[1]],cs[ix[2]],cs[ix[3]],cs[ix[4]]]); if(v>best)best=v; }
+  return best;
+}
+const CAT_NAMES=['하이카드','원페어','투페어','트립스','스트레이트','플러시','풀하우스','포카드','스트레이트 플러시'];
+const handCat=v=>{let x=v;for(let i=0;i<5;i++)x=Math.floor(x/13);return x;};
+
+/* ===================== Firebase 연결 ===================== */
+// 파일에 미리 박아둔 설정 — 친구는 붙여넣기 없이 바로 접속 가능.
+// (Firebase 웹 config는 공개되어도 안전한 값입니다)
+const EMBEDDED_CFG = {
+  apiKey: "AIzaSyCLSBwev79lFroNjRfwi5Avs4ON0H2gG7M",
+  authDomain: "poker-play-d40d2.firebaseapp.com",
+  databaseURL: "https://poker-play-d40d2-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "poker-play-d40d2",
+  storageBucket: "poker-play-d40d2.firebasestorage.app",
+  messagingSenderId: "721558880217",
+  appId: "1:721558880217:web:9860bb9fbf1f48a5d023c8"
+};
+let db=null, auth=null, myUid=null;
+const LS_CFG='poker_fb_cfg', LS_NAME='poker_name';
+
+function initFirebase(cfg){
+  if(firebase.apps.length) return true;
+  firebase.initializeApp(cfg);
+  db=firebase.database(); auth=firebase.auth();
+  return true;
+}
+function showScreen(which){
+  $('screen').style.display='flex';
+  for(const id of ['setupCard','joinCard','waitCard']) $(id).style.display='none';
+  $(which).style.display='block';
+  if(which==='joinCard') applyRoomFromURL();
+}
+function hideScreen(){ $('screen').style.display='none'; }
+
+/* ----- 설정 화면 ----- */
+function bootSetup(){
+  // 1순위: 파일에 박아둔 설정 → 설정 화면 건너뛰고 바로 로비
+  if(EMBEDDED_CFG && EMBEDDED_CFG.databaseURL && !EMBEDDED_CFG.databaseURL.includes('....')){
+    try{ initFirebase(EMBEDDED_CFG); signInThen(()=>showScreen('joinCard')); return; }
+    catch(e){}
+  }
+  const saved=localStorage.getItem(LS_CFG);
+  if(saved){
+    try{ initFirebase(JSON.parse(saved)); signInThen(()=>showScreen('joinCard')); return; }
+    catch(e){ localStorage.removeItem(LS_CFG); }
+  }
+  showScreen('setupCard');
+}
+// URL에 ?room=코드 가 있으면 참가 탭으로 자동 전환 + 코드 채움
+function applyRoomFromURL(){
+  const code=new URLSearchParams(location.search).get('room');
+  if(code){
+    $('tabJoin').click();
+    $('codeInput').value=code.toUpperCase();
+  }
+}
+function signInThen(cb){
+  auth.onAuthStateChanged(u=>{ if(u){ myUid=u.uid; cb(); } });
+  auth.signInAnonymously().catch(e=>{
+    $('cfgMsg').className='msg err';
+    $('cfgMsg').textContent='익명 로그인 실패: '+e.message+' — 가이드의 [익명 인증 켜기] 단계를 확인하세요.';
+  });
+}
+$('btnSaveCfg').onclick=()=>{
+  let cfg;
+  try{
+    let t=$('cfgInput').value.trim();
+    const m=t.match(/\{[\s\S]*\}/); if(m) t=m[0];
+    cfg=JSON.parse(t);
+  }catch(e){ $('cfgMsg').className='msg err'; $('cfgMsg').textContent='JSON 형식이 올바르지 않습니다. config 객체 전체를 붙여넣었는지 확인하세요.'; return; }
+  if(!cfg.databaseURL){ $('cfgMsg').className='msg err'; $('cfgMsg').textContent='databaseURL이 없습니다. Realtime Database를 만들었는지 확인하세요.'; return; }
+  try{ initFirebase(cfg); }catch(e){ $('cfgMsg').className='msg err'; $('cfgMsg').textContent='초기화 실패: '+e.message; return; }
+  localStorage.setItem(LS_CFG, JSON.stringify(cfg));
+  $('cfgMsg').className='msg ok'; $('cfgMsg').textContent='연결 중…';
+  signInThen(()=>showScreen('joinCard'));
+};
+$('resetCfg').onclick=e=>{ e.preventDefault(); localStorage.removeItem(LS_CFG); location.reload(); };
+
+/* ----- 로비 탭 전환 ----- */
+$('tabCreate').onclick=()=>{ $('tabCreate').classList.add('on');$('tabJoin').classList.remove('on'); $('createPane').style.display='block';$('joinPane').style.display='none'; };
+$('tabJoin').onclick=()=>{ $('tabJoin').classList.add('on');$('tabCreate').classList.remove('on'); $('joinPane').style.display='block';$('createPane').style.display='none'; };
+$('nameInput').value=localStorage.getItem(LS_NAME)||'';
+
+/* ===================== 방 생성 / 참가 ===================== */
+let roomId=null, isHost=false, mySeat=-1, roomCfg=null;
+
+function randCode(){ const ch='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<4;i++)s+=ch[Math.floor(Math.random()*ch.length)]; return s; }
+
+$('btnCreate').onclick=async()=>{
+  const name=($('nameInput').value||'').trim(); if(!name){ joinErr('닉네임을 입력하세요.'); return; }
+  localStorage.setItem(LS_NAME,name);
+  const sb=+$('sbVal').value, bb=+$('bbVal').value, max=+$('maxSeats').value, start=+$('startStack').value;
+  if(bb<=sb){ joinErr('빅 블라인드는 스몰 블라인드보다 커야 합니다.'); return; }
+  let code, tries=0;
+  while(true){ code=randCode(); const snap=await db.ref('rooms/'+code+'/meta').get(); if(!snap.exists())break; if(++tries>8){joinErr('코드 생성 실패, 다시 시도하세요.');return;} }
+  roomId=code; isHost=true;
+  const meta={host:myUid, status:'lobby', sb, bb, startStack:start, maxSeats:max, autoRebuy:true, createdAt:firebase.database.ServerValue.TIMESTAMP};
+  await db.ref('rooms/'+code+'/meta').set(meta);
+  await takeSeat(name, 0);
+  enterRoom();
+};
+
+$('btnJoin').onclick=async()=>{
+  const name=($('nameInput').value||'').trim(); if(!name){ joinErr('닉네임을 입력하세요.'); return; }
+  localStorage.setItem(LS_NAME,name);
+  const code=($('codeInput').value||'').trim().toUpperCase(); if(!code){ joinErr('방 코드를 입력하세요.'); return; }
+  const metaSnap=await db.ref('rooms/'+code+'/meta').get();
+  if(!metaSnap.exists()){ joinErr('존재하지 않는 방 코드입니다.'); return; }
+  const meta=metaSnap.val();
+  roomId=code; isHost=(meta.host===myUid);
+  const seatsSnap=await db.ref('rooms/'+code+'/seats').get();
+  const seats=seatsSnap.val()||{};
+  if(seats[myUid]){ enterRoom(); return; }
+  if(meta.status!=='lobby'){ joinErr('이미 게임이 시작된 방입니다.'); return; }
+  const taken=new Set(Object.values(seats).map(s=>s.seat));
+  let seat=-1; for(let i=0;i<meta.maxSeats;i++) if(!taken.has(i)){ seat=i; break; }
+  if(seat<0){ joinErr('방이 가득 찼습니다.'); return; }
+  await takeSeat(name, seat);
+  enterRoom();
+};
+
+async function takeSeat(name, seat){
+  const ref=db.ref('rooms/'+roomId+'/seats/'+myUid);
+  await ref.set({name, seat, online:true, joinedAt:firebase.database.ServerValue.TIMESTAMP});
+  ref.onDisconnect().update({online:false});
+  mySeat=seat;
+}
+function joinErr(m){ $('joinMsg').className='msg err'; $('joinMsg').textContent=m; }
+
+/* ===================== 대기실 ===================== */
+function enterRoom(){
+  $('codeDisp').textContent=roomId;
+  $('hRoom').textContent=roomId;
+  showScreen('waitCard');
+  db.ref('rooms/'+roomId+'/meta').on('value', snap=>{
+    if(!snap.exists()){ alert('방이 사라졌습니다.'); location.reload(); return; }
+    roomCfg=snap.val();
+    isHost=(roomCfg.host===myUid);
+    $('hBlinds').textContent=roomCfg.sb+'/'+roomCfg.bb;
+    $('hRole').textContent=isHost?'👑 방장':'참가자';
+    $('btnStartGame').style.display=(isHost&&roomCfg.status==='lobby')?'block':'none';
+    if(roomCfg.status==='playing' && $('screen').style.display!=='none'){ hideScreen(); }
+  });
+  db.ref('rooms/'+roomId+'/seats').on('value', snap=>{
+    const seats=snap.val()||{};
+    renderLobby(seats);
+    if(isHost) hostOnSeats(seats);
+  });
+  db.ref('rooms/'+roomId+'/state').on('value', snap=>{ if(snap.exists()) renderTable(snap.val()); });
+  db.ref('rooms/'+roomId+'/private/'+myUid).on('value', snap=>{ myHole = snap.val()?snap.val().hole:null; if(lastState) renderTable(lastState); });
+  setInterval(()=>{ if(roomId) db.ref('rooms/'+roomId+'/seats/'+myUid+'/online').set(true); }, 15000);
+}
+function renderLobby(seats){
+  const arr=Object.entries(seats).map(([uid,s])=>({uid,...s})).sort((a,b)=>a.seat-b.seat);
+  $('lobbyPlayers').innerHTML=arr.map(s=>`<li><span>${s.uid===(roomCfg&&roomCfg.host)?'👑 ':''}${esc(s.name)}${s.uid===myUid?' (나)':''}</span><span class="seat-n">좌석 ${s.seat+1}</span></li>`).join('');
+}
+$('codeDisp').onclick=()=>{
+  const isWeb=location.protocol.startsWith('http');
+  const shareLink=location.origin+location.pathname+'?room='+roomId;
+  const text=isWeb?shareLink:roomId;
+  if(navigator.clipboard) navigator.clipboard.writeText(text);
+  $('waitMsg2').className='msg ok';
+  $('waitMsg2').textContent=isWeb?'참가 링크 복사됨! 친구에게 보내세요.':'코드 복사됨! (웹에 올리면 링크로 공유돼요)';
+};
+function esc(s){ return String(s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])); }
+
+$('btnStartGame').onclick=()=>{
+  if(!isHost) return;
+  const n=Object.keys(hostSeats||{}).length;
+  if(n<2){ $('waitMsg2').className='msg err'; $('waitMsg2').textContent='최소 2명이 필요합니다.'; return; }
+  db.ref('rooms/'+roomId+'/meta/status').set('playing');
+  hostStartGame();
+};
+$('btnLeave').onclick=async()=>{
+  if(roomId){ await db.ref('rooms/'+roomId+'/seats/'+myUid).remove().catch(()=>{}); }
+  location.reload();
+};
+
+/* ===================== 렌더링 (모든 클라이언트) ===================== */
+let lastState=null, myHole=null;
+function pcardHTML(c, big, faceDown){
+  if(faceDown||c==null) return `<div class="pcard back ${big?'big':''}"></div>`;
+  return `<div class="pcard ${isRed(c)?'red':''} ${big?'big':''}">${RANK_CH[rk(c)]}<span>${SUIT_CH[st(c)]}</span></div>`;
+}
+function renderTable(s){
+  lastState=s;
+  $('hHandNo').textContent=s.handNo||0;
+  const tbl=$('table'); tbl.innerHTML='';
+  const seatList=s.seatOrder||[];
+  const N=roomCfg?roomCfg.maxSeats:seatList.length;
+  const mine=seatList.find(x=>x.uid===myUid);
+  const myIdx=mine?mine.seat:0;
+  for(const sd of seatList){
+    const pl=s.players?s.players[sd.uid]:null;
+    const rel=((sd.seat - myIdx)+N)%N;
+    const ang=Math.PI/2 + rel/N*2*Math.PI;
+    const x=50 + 41*Math.cos(ang);
+    const y=50 + 43*Math.sin(ang);
+    const div=document.createElement('div');
+    div.className='seat';
+    if(sd.uid===myUid) div.classList.add('me');
+    if(pl){
+      if(pl.folded) div.classList.add('folded');
+      if(s.turn===sd.uid && !s.handOver) div.classList.add('active');
+      if(s.button===sd.uid) div.classList.add('dealer');
+    }
+    if(sd.online===false) div.classList.add('offline');
+    div.style.left=x+'%'; div.style.top=y+'%';
+    let cardsHTML='';
+    if(pl){
+      if(sd.uid===myUid && myHole){
+        cardsHTML=myHole.map(c=>pcardHTML(c,false,false)).join('');
+      }else if(pl.show && pl.hole){
+        cardsHTML=pl.hole.map(c=>pcardHTML(c,false,false)).join('');
+      }else if(!pl.folded){
+        cardsHTML=pcardHTML(null,false,true)+pcardHTML(null,false,true);
+      }
+    }
+    div.innerHTML=`<div class="box">
+      <div class="pos">${pl?(pl.pos||''):''}</div>
+      <span class="off">offline</span>
+      <div class="btn-disc">D</div>
+      <div class="nm">${esc(sd.name)}${sd.uid===myUid?' (나)':''}</div>
+      <div class="cards">${cardsHTML}</div>
+      <div class="stk">${pl?pl.stack:'-'}</div>
+      <div class="act">${pl?(pl.lastAct||''):'대기'}</div>
+      <div class="bet-chip">${pl&&pl.sc>0?'🪙 '+pl.sc:''}</div>
+    </div>`;
+    tbl.appendChild(div);
+  }
+  $('board').innerHTML=(s.board||[]).map(c=>pcardHTML(c,true,false)).join('');
+  $('potLbl').textContent=(s.pot>0||(s.board&&s.board.length))?('팟 '+(s.pot||0)):'';
+  $('centerMsg').textContent=s.centerMsg||'';
+  if(s.log){ $('log').innerHTML=s.log.map(l=>`<div class="${l.cls||''}">${esc(l.t)}</div>`).join(''); $('log').scrollTop=$('log').scrollHeight; }
+  renderActionBar(s);
+}
+function renderActionBar(s){
+  const bar=$('actionBar');
+  const myTurn=(s.turn===myUid && !s.handOver && s.players && s.players[myUid] && !s.players[myUid].folded && !s.players[myUid].allin);
+  if(!myTurn){
+    let m='대기 중…';
+    if(s.handOver) m='핸드 종료 — 다음 핸드 준비 중…';
+    else if(s.turn && s.players && s.players[s.turn]) m=esc(s.players[s.turn].name)+' 님의 차례';
+    bar.innerHTML=`<span id="waitMsg">${m}</span>`+(isHost&&s.handOver?`<span id="hostCtl"><button class="primary" onclick="hostNextHand()">다음 핸드</button></span>`:'');
+    return;
+  }
+  const me=s.players[myUid];
+  const toCall=s.currentBet - me.sc;
+  const bb=roomCfg.bb;
+  const minRaiseTo=s.currentBet + (s.lastRaise||bb);
+  const maxTo=me.sc + me.stack;
+  const canCheck=toCall<=0;
+  const callAmt=Math.min(toCall, me.stack);
+  let html=`<button class="fold" onclick="sendAction('fold')">폴드</button>`;
+  html+=`<button class="call" onclick="sendAction('${canCheck?'check':'call'}')">${canCheck?'체크':'콜 '+callAmt}</button>`;
+  if(maxTo>s.currentBet){
+    const init=Math.min(Math.max(minRaiseTo,Math.round(s.pot*0.66)||minRaiseTo), maxTo);
+    html+=`<div id="raiseCtl">
+      <input type="range" id="raiseRange" min="${Math.min(minRaiseTo,maxTo)}" max="${maxTo}" value="${init}" step="${bb}" oninput="syncRaise(this.value)">
+      <input id="raiseAmt" type="number" value="${init}" min="${minRaiseTo}" max="${maxTo}" oninput="syncRange(this.value)">
+      <button class="quick" onclick="setRaise(${Math.min(minRaiseTo,maxTo)})">최소</button>
+      <button class="quick" onclick="setRaise(${Math.min(Math.round(s.currentBet+s.pot*0.5)||minRaiseTo,maxTo)})">½팟</button>
+      <button class="quick" onclick="setRaise(${Math.min(Math.round(s.currentBet+s.pot)||minRaiseTo,maxTo)})">팟</button>
+      <button class="quick" onclick="setRaise(${maxTo})">올인</button>
+      <button class="raise" onclick="sendRaise()">${s.currentBet>0?'레이즈':'벳'}</button>
+    </div>`;
+  }
+  bar.innerHTML=html;
+}
+function syncRaise(v){ $('raiseAmt').value=v; }
+function syncRange(v){ const r=$('raiseRange'); if(r){ r.value=Math.min(Math.max(+v,+r.min),+r.max);} }
+function setRaise(v){ $('raiseRange').value=v; $('raiseAmt').value=v; }
+function sendRaise(){ let v=+$('raiseAmt').value; sendAction('raise', v); }
+function sendAction(type, amtTo){
+  const s=lastState;
+  db.ref('rooms/'+roomId+'/actions/'+myUid).set({type, amtTo:amtTo||0, handNo:s.handNo, street:s.street, ts:Date.now()});
+  $('actionBar').innerHTML='<span id="waitMsg">전송됨…</span>';
+}
+
+/* ===================================================================
+   ===================  방장(HOST) 전용 게임 엔진  ====================
+   덱은 호스트 메모리에만 보관(절대 DB에 안 올림) → 카드 비밀 유지.
+   공개 상태는 /state, 비공개 홀카드는 /private/{uid}/hole 에 기록.
+=================================================================== */
+let hostSeats=null, hostDeck=[], hostHoles={}, G=null, hostActionRef=null, hostTimer=null;
+
+function hostOnSeats(seats){ hostSeats=seats; if(roomCfg && roomCfg.status==='lobby') renderLobby(seats); }
+
+function hostStartGame(){
+  if(!isHost) return;
+  if(!hostActionRef){
+    hostActionRef=db.ref('rooms/'+roomId+'/actions');
+    hostActionRef.on('child_added', snap=>hostHandleAction(snap.key, snap.val()));
+    hostActionRef.on('child_changed', snap=>hostHandleAction(snap.key, snap.val()));
+  }
+  G={button:-1, handNo:0};
+  hostNextHand();
+}
+function seatOrderArr(){
+  return Object.entries(hostSeats).map(([uid,s])=>({uid,seat:s.seat,name:s.name,online:s.online!==false}))
+    .sort((a,b)=>a.seat-b.seat);
+}
+function hostNextHand(){
+  if(!isHost) return;
+  clearTimeout(hostTimer);
+  const order=seatOrderArr();
+  let active=order.filter(o=>{
+    const prev=G.players&&G.players[o.uid];
+    let stack=prev?prev.stack:roomCfg.startStack;
+    if(roomCfg.autoRebuy && stack<roomCfg.bb) stack=roomCfg.startStack;
+    o.stack=stack; return stack>=roomCfg.bb;
+  });
+  if(active.length<2){ hostWriteState({handNo:G.handNo,handOver:true, centerMsg:'플레이어가 부족합니다', seatOrder:order.map(o=>({uid:o.uid,seat:o.seat,name:o.name,online:o.online})), players:{}, board:[], pot:0, log:G.log||[]}); return; }
+
+  G.handNo++; G.street=0; G.board=[]; G.pot=0; G.currentBet=roomCfg.bb; G.lastRaise=roomCfg.bb; G.handOver=false;
+  G.log=(G.log||[]).slice(-40);
+  G.button=nextOccupied(G.button, active);
+  hostDeck=[...Array(52).keys()];
+  for(let i=51;i>0;i--){const j=Math.floor(Math.random()*(i+1));[hostDeck[i],hostDeck[j]]=[hostDeck[j],hostDeck[i]];}
+  hostHoles={}; G.players={};
+  for(const o of active){
+    const hole=[hostDeck.pop(),hostDeck.pop()];
+    hostHoles[o.uid]=hole;
+    G.players[o.uid]={uid:o.uid,name:o.name,seat:o.seat,stack:o.stack,sc:0,tc:0,folded:false,allin:false,acted:false,lastAct:'',show:false,pos:''};
+    db.ref('rooms/'+roomId+'/private/'+o.uid).set({hole, handNo:G.handNo});
+  }
+  G.live=active.map(o=>o.uid);
+  assignPositions();
+  hlog(`— 핸드 #${G.handNo} (딜러: ${G.players[G.live[idxOf(G.button)]].name}) —`,'hd');
+  const n=G.live.length, btnI=idxOf(G.button);
+  let sbI, bbI, firstI;
+  if(n===2){ sbI=btnI; bbI=(btnI+1)%n; firstI=btnI; }
+  else { sbI=(btnI+1)%n; bbI=(btnI+2)%n; firstI=(btnI+3)%n; }
+  postBlind(G.live[sbI], roomCfg.sb, 'SB');
+  postBlind(G.live[bbI], roomCfg.bb, 'BB');
+  G.turnIdx=firstI;
+  hostWriteState();
+  hostAdvance();
+}
+function nextOccupied(fromSeat, active){
+  const seats=active.map(o=>o.seat).sort((a,b)=>a-b);
+  for(const s of seats) if(s>fromSeat) return s;
+  return seats[0];
+}
+function idxOf(seat){ return G.live.findIndex(uid=>G.players[uid].seat===seat); }
+function assignPositions(){
+  const n=G.live.length, btnI=idxOf(G.button);
+  let names;
+  if(n===2) names=['BTN','BB'];
+  else{
+    names=['BTN','SB','BB']; const mid=['UTG','UTG+1','MP','MP+1','LJ'];
+    for(let k=3;k<n;k++) names.push(mid[k-3]||('P'+k));
+    if(n>=4) names[n-1]='CO';
+    if(n>=5) names[n-2]='HJ';
+  }
+  for(let k=0;k<n;k++){ const uid=G.live[(btnI+k)%n]; G.players[uid].pos=names[k]||''; }
+}
+function postBlind(uid, amt, label){
+  const p=G.players[uid];
+  const a=Math.min(amt,p.stack); p.stack-=a; p.sc+=a; p.tc+=a; G.pot+=a;
+  if(p.stack===0)p.allin=true;
+  p.lastAct=label+' '+a; p.acted=false;
+}
+function hostHandleAction(uid, act){
+  if(!isHost||!act||!G||G.handOver) return;
+  const curUid=G.live[G.turnIdx];
+  if(uid!==curUid){ return; }
+  if(act.handNo!==G.handNo || act.street!==G.street){ db.ref('rooms/'+roomId+'/actions/'+uid).remove(); return; }
+  applyHostAction(uid, act.type, act.amtTo);
+  db.ref('rooms/'+roomId+'/actions/'+uid).remove();
+  advanceTurn();
+  hostWriteState();
+  hostAdvance();
+}
+function applyHostAction(uid, type, amtTo){
+  const p=G.players[uid];
+  const toCall=G.currentBet-p.sc;
+  if(type==='fold'){ p.folded=true; p.lastAct='폴드'; }
+  else if(type==='check'){
+    if(toCall>0){ const a=Math.min(toCall,p.stack); p.stack-=a;p.sc+=a;p.tc+=a;G.pot+=a; if(p.stack===0)p.allin=true; p.lastAct='콜 '+a; }
+    else p.lastAct='체크';
+  }
+  else if(type==='call'){ const a=Math.min(toCall,p.stack); p.stack-=a;p.sc+=a;p.tc+=a;G.pot+=a; if(p.stack===0)p.allin=true; p.lastAct='콜 '+a+(p.allin?' (올인)':''); }
+  else if(type==='raise'){
+    let target=Math.min(amtTo, p.sc+p.stack);
+    const minTo=G.currentBet+G.lastRaise;
+    if(target<minTo && target<p.sc+p.stack) target=Math.min(minTo, p.sc+p.stack);
+    const isBet=G.currentBet===0;
+    const pay=Math.min(target-p.sc, p.stack); p.stack-=pay;p.sc+=pay;p.tc+=pay;G.pot+=pay;
+    if(p.stack===0)p.allin=true;
+    if(p.sc>G.currentBet){
+      const full=p.sc>=G.currentBet+G.lastRaise;
+      if(full){ for(const q of Object.values(G.players)) if(q.uid!==uid&&!q.folded&&!q.allin) q.acted=false; }
+      G.lastRaise=Math.max(G.lastRaise,p.sc-G.currentBet);
+      G.currentBet=p.sc;
+    }
+    p.lastAct=(isBet?'벳 ':'레이즈 ')+p.sc+(p.allin?' (올인)':'');
+  }
+  p.acted=true;
+  hlog(`${p.name} [${p.pos}]: ${p.lastAct}`);
+}
+function liveArr(){ return G.live.map(u=>G.players[u]).filter(p=>!p.folded); }
+function actArr(){ return G.live.map(u=>G.players[u]).filter(p=>!p.folded&&!p.allin); }
+function roundDone(){ return liveArr().every(p=>p.allin||(p.acted&&p.sc===G.currentBet)); }
+function advanceTurn(){
+  const n=G.live.length;
+  let i=(G.turnIdx+1)%n;
+  for(let k=0;k<n;k++){ const p=G.players[G.live[i]]; if(!p.folded&&!p.allin&&!(p.acted&&p.sc===G.currentBet)) break; i=(i+1)%n; }
+  G.turnIdx=i;
+}
+function hostAdvance(){
+  if(!isHost||G.handOver) return;
+  if(liveArr().length===1){ endByFold(); return; }
+  if(roundDone()){ endStreet(); return; }
+  let i=G.turnIdx, n=G.live.length, found=false;
+  for(let k=0;k<n;k++){ const p=G.players[G.live[i]]; if(!p.folded&&!p.allin&&!(p.acted&&p.sc===G.currentBet)){found=true;break;} i=(i+1)%n; }
+  if(!found){ endStreet(); return; }
+  G.turnIdx=i;
+  hostWriteState();
+  const uid=G.live[i];
+  const online = hostSeats[uid] && hostSeats[uid].online!==false;
+  if(!online){
+    clearTimeout(hostTimer);
+    hostTimer=setTimeout(()=>{
+      if(G.live[G.turnIdx]!==uid||G.handOver) return;
+      const toCall=G.currentBet-G.players[uid].sc;
+      applyHostAction(uid, toCall>0?'fold':'check');
+      advanceTurn(); hostWriteState(); hostAdvance();
+    }, 2500);
+  }
+}
+function endStreet(){
+  if(G.street===3){ showdown(); return; }
+  if(actArr().length<=1){ runout(); return; }
+  G.street++;
+  dealBoard();
+  G.currentBet=0; G.lastRaise=roomCfg.bb;
+  for(const uid of G.live){ const p=G.players[uid]; p.sc=0; p.acted=false; if(!p.folded)p.lastAct=''; }
+  const n=G.live.length, btnI=idxOf(G.button);
+  let i=(btnI+1)%n; for(let k=0;k<n;k++){ const p=G.players[G.live[i]]; if(!p.folded&&!p.allin)break; i=(i+1)%n;} G.turnIdx=i;
+  hostWriteState();
+  hostAdvance();
+}
+function dealBoard(){
+  const add=G.street===1?3:1;
+  for(let k=0;k<add;k++)G.board.push(hostDeck.pop());
+  hlog(`${['','플랍','턴','리버'][G.street]}: ${G.board.map(cardStr).join(' ')}`);
+}
+function runout(){
+  if(G.street>=3){ showdown(); return; }
+  G.street++; dealBoard(); hostWriteState();
+  hostTimer=setTimeout(runout, 1100);
+}
+function endByFold(){
+  const w=liveArr()[0];
+  w.stack+=G.pot;
+  hlog(`${w.name} 팟 ${G.pot} 획득 (모두 폴드)`,'win');
+  G.centerMsg=w.name+' 승리';
+  finishHand();
+}
+function showdown(){
+  const live=liveArr();
+  for(const p of live){ p.show=true; p.hole=hostHoles[p.uid]; }
+  const scores={};
+  for(const p of live) scores[p.uid]=eval7(p.hole.concat(G.board));
+  const levels=[...new Set(G.live.map(u=>G.players[u].tc).filter(t=>t>0))].sort((a,b)=>a-b);
+  let prev=0; const win={};
+  for(const lvl of levels){
+    let layer=0;
+    for(const u of G.live){ layer+=Math.max(0,Math.min(G.players[u].tc,lvl)-prev); }
+    const elig=live.filter(p=>p.tc>=lvl);
+    if(elig.length){
+      const best=Math.max(...elig.map(p=>scores[p.uid]));
+      const ws=elig.filter(p=>scores[p.uid]===best);
+      const share=Math.floor(layer/ws.length);
+      for(const w of ws) win[w.uid]=(win[w.uid]||0)+share;
+      win[ws[0].uid]=(win[ws[0].uid]||0)+(layer-share*ws.length);
+    }
+    prev=lvl;
+  }
+  for(const p of live) hlog(`${p.name}: ${p.hole.map(cardStr).join(' ')} → ${CAT_NAMES[handCat(scores[p.uid])]}`);
+  let winnerNames=[];
+  for(const uid in win){ if(win[uid]>0){ G.players[uid].stack+=win[uid]; hlog(`${G.players[uid].name} 팟 ${win[uid]} 획득`,'win'); winnerNames.push(G.players[uid].name); } }
+  G.centerMsg='쇼다운 — '+winnerNames.join(', ')+' 승리';
+  finishHand();
+}
+function finishHand(){
+  G.handOver=true;
+  hostWriteState();
+  clearTimeout(hostTimer);
+  hostTimer=setTimeout(()=>{ if(isHost && roomCfg.status==='playing') hostNextHand(); }, 4500);
+}
+function hlog(t, cls){ G.log=G.log||[]; G.log.push({t,cls:cls||''}); if(G.log.length>60)G.log=G.log.slice(-60); }
+function hostWriteState(override){
+  if(override){ db.ref('rooms/'+roomId+'/state').set(override); return; }
+  const order=seatOrderArr().map(o=>({uid:o.uid,seat:o.seat,name:o.name,online:o.online}));
+  const pub={};
+  for(const uid in G.players){
+    const p=G.players[uid];
+    pub[uid]={name:p.name,seat:p.seat,stack:p.stack,sc:p.sc,tc:p.tc,folded:p.folded,allin:p.allin,acted:p.acted,lastAct:p.lastAct,pos:p.pos,show:!!p.show};
+    if(p.show&&p.hole) pub[uid].hole=p.hole;
+  }
+  const state={
+    handNo:G.handNo, street:G.street, board:G.board, pot:G.pot, currentBet:G.currentBet, lastRaise:G.lastRaise,
+    button:G.live[idxOf(G.button)], turn:(G.handOver?null:G.live[G.turnIdx]), handOver:G.handOver,
+    seatOrder:order, players:pub, log:G.log, centerMsg:G.centerMsg||''
+  };
+  G.centerMsg='';
+  db.ref('rooms/'+roomId+'/state').set(state);
+}
+
+window.addEventListener('load', ()=>{
+  if(typeof firebase==='undefined'){ $('cfgMsg').className='msg err'; $('cfgMsg').textContent='Firebase SDK 로드 실패 — 인터넷 연결을 확인하세요.'; return; }
+  bootSetup();
+});
+</script>
+</body>
+</html>
