@@ -54,13 +54,13 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 #table{position:absolute; left:50%; top:48%; transform:translate(-50%,-50%); width:min(80%,860px); aspect-ratio:1.85;
   background:radial-gradient(ellipse at center, var(--felt) 0%, var(--felt-dark) 100%);
   border-radius:50%/55%; border:14px solid #3d2b1f; box-shadow:0 10px 40px rgba(0,0,0,.6), inset 0 0 60px rgba(0,0,0,.35);}
-.seat{position:absolute; width:150px; transform:translate(-50%,-50%); text-align:center; transition:opacity .25s;}
-.seat .box{background:rgba(10,14,18,.85); border:2px solid #333d48; border-radius:10px; padding:6px 8px; position:relative;}
+.seat{position:absolute; width:116px; transform:translate(-50%,-50%); text-align:center; transition:opacity .25s;}
+.seat .box{background:rgba(10,14,18,.85); border:2px solid #333d48; border-radius:9px; padding:3px 6px; position:relative;}
 .seat.active .box{border-color:var(--gold); box-shadow:0 0 12px rgba(232,194,100,.55);}
 .seat.me .box{border-color:#5077ab;}
 .seat.folded{opacity:.36;}
-.seat .nm{font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-.seat .stk{font-size:12px; color:var(--gold);}
+.seat .nm{font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.seat .stk{font-size:11px; color:var(--gold);}
 .seat .act{font-size:11px; color:#9fd49f; min-height:14px;}
 .seat .pos{position:absolute; top:-9px; right:-6px; background:#2a323c; color:var(--dim); font-size:10px; padding:1px 6px; border-radius:8px;}
 .seat .off{position:absolute; top:-9px; left:-6px; background:#5a2e2e; color:#e7b3b3; font-size:9px; padding:1px 5px; border-radius:8px; display:none;}
@@ -70,8 +70,8 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 .seat .timer:empty{display:none;}
 .seat .timer.low{color:#ff6b6b;}
 .seat.dealer .btn-disc{display:block;}
-.cards{display:flex; gap:4px; justify-content:center; margin:5px 0 2px;}
-.pcard{width:32px; height:46px; border-radius:5px; background:#fff; color:#111; font-weight:700; font-size:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.05; box-shadow:0 2px 4px rgba(0,0,0,.4);}
+.cards{display:flex; gap:3px; justify-content:center; margin:3px 0 1px;}
+.pcard{width:27px; height:39px; border-radius:5px; background:#fff; color:#111; font-weight:700; font-size:13px; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.05; box-shadow:0 2px 4px rgba(0,0,0,.4);}
 .pcard.red{color:#cc2222;}
 .pcard.back{background:repeating-linear-gradient(45deg,#5a7ab8,#5a7ab8 4px,#4a66a0 4px,#4a66a0 8px); border:2px solid #dde;}
 .pcard.big{width:46px; height:64px; font-size:19px;}
@@ -86,8 +86,13 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 .street-pill:empty{display:none;}
 /* 펠트 위 베팅액 배지 [금액 bet] */
 .felt-bet{position:absolute; transform:translate(-50%,-50%); z-index:5; pointer-events:none; white-space:nowrap;
-  background:rgba(8,12,16,.85); border:1px solid var(--gold); color:var(--gold);
+  background:rgba(8,12,16,.85); border:1px solid #46535f; color:#cdd5de;
   font-size:13px; font-weight:800; padding:2px 10px; border-radius:11px; box-shadow:0 2px 5px rgba(0,0,0,.55);}
+.felt-bet.t-bet{border-color:var(--gold); color:var(--gold);}
+.felt-bet.t-check{border-color:#3fae5a; color:#9fe0a8;}
+.felt-bet.t-fold{border-color:#6a4040; color:#c98a8a; opacity:.85;}
+.felt-bet.t-out{border-color:#7a3a3a; color:#e0a0a0;}
+.felt-bet.t-wait{border-color:#3a4350; color:#8a939e;}
 #centerMsg{position:absolute; left:50%; top:30%; transform:translateX(-50%); font-size:15px; color:var(--gold); text-shadow:0 1px 3px #000; font-weight:600; text-align:center; white-space:nowrap;}
 
 #sidePanel{width:280px; background:var(--panel); border-left:1px solid var(--line); display:flex; flex-direction:column;}
@@ -127,7 +132,7 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
   #main{flex-direction:column; min-height:0;}
   #tableWrap{min-width:0; flex:1; min-height:0;}
   #table{width:97%; top:45%; aspect-ratio:1.12; border-width:9px;}
-  .seat{width:84px;}
+  .seat{width:76px;}
   .seat .box{padding:4px 5px;}
   .seat .nm{font-size:11px;}
   .seat .stk{font-size:11px;}
@@ -569,6 +574,17 @@ function chipColor(a){
   if(a<500) return '#3fae5a';
   return '#26262b';
 }
+// 펠트(베팅액 자리)에 표시할 상태 텍스트
+function feltStatus(pl){
+  if(!pl) return '';
+  const la=pl.lastAct||'';
+  if(/폴드/.test(la)) return '폴드';
+  if(/탈락/.test(la)) return '탈락';
+  if(/우승/.test(la)) return '🏆';
+  if(/체크/.test(la)) return '체크';
+  if(pl.sc>0) return pl.sc+' bet';   // 콜/벳/레이즈/블라인드
+  return '대기';
+}
 // 팟: POT + 큰 숫자 + 스트리트(프리플랍/플랍/턴/리버) — 칩 그림 없음
 function potHTML(amount, street){
   const names=['프리플랍','플랍','턴','리버'];
@@ -622,18 +638,26 @@ function renderTable(s){
       <div class="nm">${esc(sd.name)}${sd.uid===myUid?' (나)':''}</div>
       <div class="cards">${cardsHTML}</div>
       <div class="stk">${pl?pl.stack:'-'}</div>
-      <div class="act">${pl?(pl.lastAct||''):'대기'}</div>
       <div class="timer"></div>
     </div>`;
     tbl.appendChild(div);
-    // 펠트 위 베팅액 배지 ([금액 bet], 좌석 쪽에 가깝게)
-    if(pl && pl.sc>0){
-      const bx=x+(50-x)*0.30, by=y+(50-y)*0.30;
-      const b=document.createElement('div');
-      b.className='felt-bet';
-      b.style.left=bx+'%'; b.style.top=by+'%';
-      b.textContent=pl.sc+' bet';
-      tbl.appendChild(b);
+    // 펠트(좌석→중앙)에 상태 배지: 베팅액 / 체크 / 폴드 / 대기 / 탈락
+    if(pl){
+      const fs=feltStatus(pl);
+      if(fs){
+        const bx=x+(50-x)*0.30, by=y+(50-y)*0.30;
+        const b=document.createElement('div');
+        let cls='felt-bet';
+        if(/bet/.test(fs)) cls+=' t-bet';
+        else if(fs==='체크') cls+=' t-check';
+        else if(fs==='폴드') cls+=' t-fold';
+        else if(fs==='탈락') cls+=' t-out';
+        else cls+=' t-wait';
+        b.className=cls;
+        b.style.left=bx+'%'; b.style.top=by+'%';
+        b.textContent=fs;
+        tbl.appendChild(b);
+      }
     }
   }
   updateTimers();
