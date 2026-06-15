@@ -66,6 +66,8 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 #heroPanel .hp-bet.t-bet{border-color:var(--gold); color:var(--gold);}
 #heroPanel .hp-bet.t-check{border-color:#3fae5a; color:#9fe0a8;}
 #heroPanel .hp-bet.t-fold{border-color:#6a4040; color:#c98a8a;}
+#seats{position:absolute; inset:0; z-index:5; pointer-events:none;}
+#seats .seat{pointer-events:auto;}
 #table{position:absolute; inset:6px 8px; box-sizing:border-box;
   background:radial-gradient(ellipse at center, var(--felt) 0%, var(--felt-dark) 100%);
   border-radius:50%; border:12px solid #3d2b1f; box-shadow:0 10px 40px rgba(0,0,0,.6), inset 0 0 60px rgba(0,0,0,.35);}
@@ -86,11 +88,10 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 .seat .btn-disc{position:absolute; bottom:-9px; right:-9px; background:#f5c542; color:#3a2a00; font-size:11px; font-weight:800; width:20px; height:20px; line-height:20px; text-align:center; border-radius:50%; display:none; box-shadow:0 1px 3px rgba(0,0,0,.5);}
 .seat.dealer .btn-disc{display:block;}
 /* GGPoker 카드: 위 색 띠(무늬색)+흰 랭크, 아래 흰 바탕+큰 색 랭크 */
-.pcard{position:relative; width:27px; height:38px; border-radius:4px; background:#fff; box-shadow:0 2px 5px rgba(0,0,0,.5); overflow:hidden;}
-.pcard::before{content:''; position:absolute; top:0; left:0; right:0; height:44%; background:currentColor;}
-.pcard .cn{position:absolute; top:0; left:0; right:0; z-index:1; color:#fff; font-weight:800; line-height:1; text-align:center; font-size:11px; padding-top:1px;}
-.pcard .cn i{font-style:normal; font-size:10px; margin-left:1px;}
-.pcard .bg{position:absolute; left:0; right:0; top:42%; bottom:1px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:17px; color:currentColor;}
+.pcard{position:relative; width:27px; height:38px; border-radius:4px; background:#888; color:#fff; box-shadow:0 2px 5px rgba(0,0,0,.5); overflow:hidden;}
+.pcard .cn{position:absolute; top:1px; left:3px; z-index:1; font-weight:800; line-height:.85; text-align:left; font-size:10px;}
+.pcard .cn i{font-style:normal; display:block; font-size:9px;}
+.pcard .bg{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px; text-shadow:0 1px 2px rgba(0,0,0,.3);}
 .seat.me .cards .pcard{width:46px; height:62px; border-radius:6px;}
 .seat.me .cards .pcard .cn{font-size:14px;} .seat.me .cards .pcard .cn i{font-size:12px;} .seat.me .cards .pcard .bg{font-size:28px;}
 .pcard.back{background:repeating-linear-gradient(45deg,#5a7ab8,#5a7ab8 4px,#4a66a0 4px,#4a66a0 8px); border:1.5px solid #dde;}
@@ -113,7 +114,8 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
   background:rgba(8,12,16,.9); border:1.5px solid #46535f; color:#cdd5de;
   font-size:15px; font-weight:800; padding:3px 12px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,.6);}
 .felt-bet.b-below{top:100%; left:50%; transform:translateX(-50%); margin-top:7px;}
-.felt-bet.b-above{bottom:100%; left:50%; transform:translateX(-50%); margin-bottom:14px;}
+.felt-bet.b-above{bottom:100%; left:50%; transform:translateX(-50%); margin-bottom:36px;}
+.seat.me .felt-bet.b-above{margin-bottom:64px;}
 .felt-bet.b-right{left:100%; top:50%; transform:translateY(-50%); margin-left:7px;}
 .felt-bet.b-left{right:100%; top:50%; transform:translateY(-50%); margin-right:7px;}
 .felt-bet.t-bet{border-color:var(--gold); color:var(--gold);}
@@ -237,6 +239,7 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
   .seat .nm{font-size:11px;} .seat .stk{font-size:12px;}
   .seat .strength{font-size:10px; padding:1px 7px; margin-top:3px;}
   .pot-amt{font-size:15px;} .turn-timer{font-size:13px;} .felt-bet{font-size:11px; padding:2px 8px;}
+  .felt-bet.b-above{margin-bottom:28px;} .seat.me .felt-bet.b-above{margin-bottom:50px;}
   #sidePanel{position:fixed; left:0; bottom:0; width:280px; height:84%; transform:translateY(105%); transition:transform .2s; z-index:35; border-top:none; border-right:1px solid var(--line);}
   #sidePanel.chat-open{transform:translateY(0);}
   #chatFab{display:flex; position:fixed; left:12px; bottom:12px; width:44px; height:44px; border-radius:50%; align-items:center; justify-content:center; font-size:20px; background:#3a5a8a; border:1px solid #5077ab; padding:0; z-index:36;}
@@ -342,6 +345,7 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 <div id="tableWrap">
   <div id="connBanner"></div>
   <div id="table"></div>
+  <div id="seats"></div>
   <div id="board"></div>
   <div id="potLbl"></div>
   <div id="centerMsg"></div>
@@ -701,12 +705,12 @@ const SUIT_COLOR=['#1a1a1a','#d11f2a','#1f6fd0','#1d9e4a']; // ♠검정 ♥빨�
 function pcardHTML(c, big, faceDown){
   if(faceDown||c==null) return `<div class="pcard back ${big?'big':''}"></div>`;
   const col=SUIT_COLOR[st(c)], r=rankDisp(rk(c)), su=SUIT_CH[st(c)];
-  return `<div class="pcard ${big?'big':''}" style="color:${col}"><span class="cn">${r}<i>${su}</i></span><span class="bg">${r}</span></div>`;
+  return `<div class="pcard ${big?'big':''}" style="background:${col}"><span class="cn">${r}<i>${su}</i></span><span class="bg">${r}</span></div>`;
 }
 function renderTable(s){
   lastState=s;
   $('hHandNo').textContent=s.handNo||0;
-  const tbl=$('table'); tbl.innerHTML='';
+  const tbl=$('seats'); tbl.innerHTML='';
   const seatList=(s.seatOrder||[]).slice().sort((a,b)=>a.seat-b.seat);
   const M=seatList.length||1;
   const myI=Math.max(0, seatList.findIndex(x=>x.uid===myUid));
