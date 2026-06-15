@@ -224,7 +224,19 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
   header h1{font-size:14px;}
   #tableWrap{flex:1; min-height:0;}
   #table{inset:2px 3%;}
-  #board{top:53%;} #potLbl{top:35%;}
+  #board{top:50%; gap:4px;} #potLbl{top:31%; padding:3px 10px;}
+  #centerMsg{top:9%; font-size:12px;}
+  /* 화면이 낮으니 카드·박스를 작게 (겹침 방지) */
+  .pcard.big{width:34px; height:48px;}
+  .pcard.big .cn{font-size:11px;} .pcard.big .cn i{font-size:10px;} .pcard.big .bg{font-size:22px;}
+  .seat.me .cards .pcard{width:32px; height:45px;}
+  .seat.me .cards .pcard .cn{font-size:10px;} .seat.me .cards .pcard .bg{font-size:18px;}
+  .pcard{width:20px; height:28px;}
+  .pcard .cn{font-size:8px;} .pcard .cn i{font-size:7px;} .pcard .bg{font-size:12px;}
+  .seat .box{min-width:62px; padding:3px 8px;}
+  .seat .nm{font-size:11px;} .seat .stk{font-size:12px;}
+  .seat .strength{font-size:10px; padding:1px 7px; margin-top:3px;}
+  .pot-amt{font-size:15px;} .turn-timer{font-size:13px;} .felt-bet{font-size:11px; padding:2px 8px;}
   #sidePanel{position:fixed; left:0; bottom:0; width:280px; height:84%; transform:translateY(105%); transition:transform .2s; z-index:35; border-top:none; border-right:1px solid var(--line);}
   #sidePanel.chat-open{transform:translateY(0);}
   #chatFab{display:flex; position:fixed; left:12px; bottom:12px; width:44px; height:44px; border-radius:50%; align-items:center; justify-content:center; font-size:20px; background:#3a5a8a; border:1px solid #5077ab; padding:0; z-index:36;}
