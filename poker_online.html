@@ -687,7 +687,10 @@ function renderTable(s){
     if(pl){
       const fs=feltStatus(pl);
       if(fs){
-        const bx=x+(50-x)*0.50, by=y+(50-y)*0.50;
+        // 좌석에서 중앙 방향으로 '고정 거리'만 이동 → 박스 바로 바깥, 중앙(팟/타이머)까지 안 감
+        const dxc=50-x, dyc=50-y, distc=Math.hypot(dxc,dyc)||1;
+        const off=Math.min(distc*0.45, small?16:21);
+        const bx=x+dxc/distc*off, by=y+dyc/distc*off;
         const b=document.createElement('div');
         let cls='felt-bet';
         if(/bet/.test(fs)) cls+=' t-bet';
