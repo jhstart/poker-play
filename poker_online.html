@@ -1112,9 +1112,11 @@ function hostAdvance(){
   G.turnIdx=i;
   const uid=G.live[i];
   const online = hostSeats[uid] && hostSeats[uid].online!==false;
-  // 대회 룰 액션 제한시간: 온라인=설정값(초), 오프라인=2.5초 빠른 처리
-  const limitMs = !online ? 2500 : (roomCfg.actionTimeout>0 ? roomCfg.actionTimeout*1000 : 0);
-  G.turnDeadline = (online && roomCfg.actionTimeout>0) ? (Date.now()+limitMs) : 0; // 카운트다운 표시용
+  // 제한시간 있으면 온·오프라인 모두 그 시간(연결 깜빡임에 관대). 무제한이면 온라인=무한, 오프라인만 20초 유예
+  let limitMs;
+  if(roomCfg.actionTimeout>0) limitMs = roomCfg.actionTimeout*1000;
+  else limitMs = online ? 0 : 20000;
+  G.turnDeadline = (roomCfg.actionTimeout>0) ? (Date.now()+roomCfg.actionTimeout*1000) : 0; // 카운트다운 표시용
   clearTimeout(hostTimer);
   hostWriteState();
   if(limitMs>0){
