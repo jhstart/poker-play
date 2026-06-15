@@ -294,6 +294,7 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
     <div class="code-disp" id="codeDisp" title="클릭하면 복사">----</div>
     <ul id="lobbyPlayers"></ul>
     <button class="primary btn-full" id="btnStartGame" style="display:none;">게임 시작</button>
+    <button class="btn-full" id="btnLeaveLobby" style="margin-top:8px; background:#3a2e2e; border-color:#5a4040;">나가기 / 새 방 만들기</button>
     <div class="msg" id="waitMsg2"></div>
     <p class="hint">방장(👑)이 게임을 진행합니다. 방장이 나가면 게임이 멈추니, 가장 연결이 안정적인 사람이 방을 만드세요.</p>
   </div>
@@ -617,11 +618,16 @@ $('btnStartGame').onclick=()=>{
   hostStartGame();                                  // 엔진 먼저 켜서 리스너 부착(중복 시작 방지)
   db.ref('rooms/'+roomId+'/meta/status').set('playing');
 };
-$('btnLeave').onclick=async()=>{
+async function leaveRoom(){
   localStorage.removeItem(LS_ROOM);
-  if(roomId){ await db.ref('rooms/'+roomId+'/seats/'+myUid).remove().catch(()=>{}); }
+  if(roomId){
+    if(isHost){ await db.ref('rooms/'+roomId).remove().catch(()=>{}); }  // 방장이 나가면 방 정리
+    else { await db.ref('rooms/'+roomId+'/seats/'+myUid).remove().catch(()=>{}); }
+  }
   location.reload();
-};
+}
+$('btnLeave').onclick=leaveRoom;
+$('btnLeaveLobby').onclick=leaveRoom;
 
 /* ===================== 렌더링 (모든 클라이언트) ===================== */
 let lastState=null, myHole=null;
