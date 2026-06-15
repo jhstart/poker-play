@@ -89,19 +89,18 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 .seat.dealer .btn-disc{display:block;}
 /* GGPoker 카드: 위 색 띠(무늬색)+흰 랭크, 아래 흰 바탕+큰 색 랭크 */
 .pcard{position:relative; width:27px; height:38px; border-radius:4px; background:#888; color:#fff; box-shadow:0 2px 5px rgba(0,0,0,.5); overflow:hidden;}
-.pcard .cn{position:absolute; top:1px; left:3px; z-index:1; font-weight:800; line-height:.85; text-align:left; font-size:10px;}
-.pcard .cn i{font-style:normal; display:block; font-size:9px;}
+.pcard .cn{position:absolute; top:1px; left:3px; z-index:1; font-weight:800; font-size:11px; line-height:1;}
 .pcard .bg{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px; text-shadow:0 1px 2px rgba(0,0,0,.3);}
 .seat.me .cards .pcard{width:46px; height:62px; border-radius:6px;}
-.seat.me .cards .pcard .cn{font-size:14px;} .seat.me .cards .pcard .cn i{font-size:12px;} .seat.me .cards .pcard .bg{font-size:28px;}
+.seat.me .cards .pcard .bg{font-size:26px;} .seat.me .cards .pcard .cn{font-size:13px;}
 .pcard.back{background:repeating-linear-gradient(45deg,#5a7ab8,#5a7ab8 4px,#4a66a0 4px,#4a66a0 8px); border:1.5px solid #dde;}
 .pcard.back::before, .pcard.back .cn, .pcard.back .bg{display:none;}
 .pcard.big{width:46px; height:64px; border-radius:6px;}
-.pcard.big .cn{font-size:14px;} .pcard.big .cn i{font-size:12px;} .pcard.big .bg{font-size:30px;}
+.pcard.big .bg{font-size:28px;} .pcard.big .bg i{font-size:18px;}
 .bet-chip{display:inline-block; font-size:14px; font-weight:800; color:#241a00; background:var(--gold); border-radius:12px; padding:2px 11px; margin-top:5px; box-shadow:0 2px 5px rgba(0,0,0,.55);}
 .bet-chip:empty{display:none;}
 #board{position:absolute; left:50%; top:51%; transform:translate(-50%,-50%); display:flex; flex-wrap:nowrap; gap:6px; z-index:3;}
-#potLbl{position:absolute; left:50%; top:33%; transform:translate(-50%,-50%); display:flex; align-items:center; gap:8px; white-space:nowrap; z-index:4; pointer-events:none; background:rgba(8,12,16,.66); border:1px solid rgba(232,194,100,.4); border-radius:16px; padding:4px 14px;}
+#potLbl{position:absolute; left:50%; top:39%; transform:translate(-50%,-50%); display:flex; align-items:center; gap:8px; white-space:nowrap; z-index:4; pointer-events:none; background:rgba(8,12,16,.66); border:1px solid rgba(232,194,100,.4); border-radius:16px; padding:4px 14px;}
 #potLbl:empty{display:none; border:none;}
 .pot-amt{font-size:18px; font-weight:800; color:var(--gold); text-shadow:0 1px 2px #000;}
 .street-pill{font-size:12px; font-weight:700; color:#cfe0cf; border-left:1px solid rgba(255,255,255,.2); padding-left:8px;}
@@ -123,7 +122,7 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 .felt-bet.t-fold{border-color:#6a4040; color:#c98a8a; opacity:.85;}
 .felt-bet.t-out{border-color:#7a3a3a; color:#e0a0a0;}
 .felt-bet.t-wait{border-color:#3a4350; color:#8a939e;}
-#centerMsg{position:absolute; left:50%; top:13%; transform:translateX(-50%); font-size:18px; color:var(--gold); text-shadow:0 2px 5px #000; font-weight:800; text-align:center; white-space:nowrap; background:rgba(8,12,16,.55); padding:2px 14px; border-radius:12px;}
+#centerMsg{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:20px; color:var(--gold); text-shadow:0 2px 6px #000; font-weight:800; text-align:center; white-space:nowrap; background:rgba(6,9,12,.92); border:1.5px solid var(--gold); padding:10px 24px; border-radius:14px; z-index:50; box-shadow:0 6px 24px rgba(0,0,0,.7);}
 #centerMsg:empty{display:none;}
 /* 내 홀카드 크게 */
 .seat.me .pcard{width:38px; height:53px; font-size:18px; border-radius:6px;}
@@ -183,8 +182,8 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
   .pcard.big{width:36px; height:50px; font-size:17px;}
   .seat.me .cards .pcard{width:34px; height:47px; font-size:15px;}
   #board{gap:4px; top:51%;}
-  #potLbl{top:33%; padding:3px 11px;}
-  #centerMsg{font-size:13px; top:9%;}
+  #potLbl{top:39%; padding:3px 11px;}
+  #centerMsg{font-size:15px; padding:8px 18px;}
   .pot-amt{font-size:16px;}
   .turn-timer{font-size:13px;}
   .felt-bet{font-size:11px; padding:2px 9px;}
@@ -226,11 +225,11 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
   header h1{font-size:14px;}
   #tableWrap{flex:1; min-height:0;}
   #table{inset:2px 3%;}
-  #board{top:50%; gap:4px;} #potLbl{top:31%; padding:3px 10px;}
-  #centerMsg{top:9%; font-size:12px;}
+  #board{top:52%; gap:4px;} #potLbl{top:38%; padding:3px 10px;}
+  #centerMsg{font-size:14px; padding:7px 16px;}
   /* 화면이 낮으니 카드·박스를 작게 (겹침 방지) */
   .pcard.big{width:34px; height:48px;}
-  .pcard.big .cn{font-size:11px;} .pcard.big .cn i{font-size:10px;} .pcard.big .bg{font-size:22px;}
+  .pcard.big .bg{font-size:21px;} .pcard.big .bg i{font-size:13px;}
   .seat.me .cards .pcard{width:32px; height:45px;}
   .seat.me .cards .pcard .cn{font-size:10px;} .seat.me .cards .pcard .bg{font-size:18px;}
   .pcard{width:20px; height:28px;}
@@ -411,6 +410,16 @@ for(let a=0;a<3;a++)for(let b=a+1;b<4;b++)for(let c=b+1;c<5;c++)for(let d=c+1;d<
 function eval7(cs){
   let best=-1;
   for(const ix of C7){ const v=eval5([cs[ix[0]],cs[ix[1]],cs[ix[2]],cs[ix[3]],cs[ix[4]]]); if(v>best)best=v; }
+  return best;
+}
+// 5~7장 모두 처리 (플랍=5, 턴=6, 리버=7) — 족보 미리보기용
+function evalBest(cs){
+  const n=cs.length;
+  if(n<5) return -1;
+  if(n===5) return eval5(cs);
+  if(n===7) return eval7(cs);
+  let best=-1; // 6장: 한 장씩 빼고 best
+  for(let i=0;i<n;i++){ const sub=cs.slice(0,i).concat(cs.slice(i+1)); const v=eval5(sub); if(v>best)best=v; }
   return best;
 }
 const CAT_NAMES=['하이카드','원페어','투페어','트립스','스트레이트','플러시','풀하우스','포카드','스트레이트 플러시'];
@@ -699,13 +708,13 @@ function feltStatus(pl){
 // 팟: 한 줄(금액 · 스트리트 · 타이머) — 보드와 안 겹치게 컴팩트
 function potHTML(amount, street){
   const names=['프리플랍','플랍','턴','리버'];
-  return `<span class="pot-amt">💰 ${(amount||0).toLocaleString()}</span><span class="street-pill">${names[street]||''}</span><span class="turn-timer"></span>`;
+  return `<span class="pot-amt">Total Pot: ${(amount||0).toLocaleString()}</span><span class="street-pill">${names[street]||''}</span><span class="turn-timer"></span>`;
 }
 const SUIT_COLOR=['#1a1a1a','#d11f2a','#1f6fd0','#1d9e4a']; // ♠검정 ♥빨강 ♦파랑 ♣초록 (4색덱)
 function pcardHTML(c, big, faceDown){
   if(faceDown||c==null) return `<div class="pcard back ${big?'big':''}"></div>`;
   const col=SUIT_COLOR[st(c)], r=rankDisp(rk(c)), su=SUIT_CH[st(c)];
-  return `<div class="pcard ${big?'big':''}" style="background:${col}"><span class="cn">${r}<i>${su}</i></span><span class="bg">${r}</span></div>`;
+  return `<div class="pcard ${big?'big':''}" style="background:${col}"><span class="cn">${su}</span><span class="bg">${r}</span></div>`;
 }
 function renderTable(s){
   lastState=s;
@@ -740,7 +749,7 @@ function renderTable(s){
       else if(!pl.folded) cardsHTML=pcardHTML(null,false,true)+pcardHTML(null,false,true);
     }
     let strength='';
-    if(isMe && myHole && s.board && s.board.length>=3){ try{ strength=CAT_NAMES[handCat(eval7(myHole.concat(s.board)))]; }catch(e){} }
+    if(isMe && myHole && s.board && s.board.length>=3){ try{ strength=CAT_NAMES[handCat(evalBest(myHole.concat(s.board)))]; }catch(e){} }
     div.innerHTML=`<div class="cards ${isMe?'mine':''}">${cardsHTML}</div>
       <div class="box">
         <div class="pos">${pl?(pl.pos||''):''}</div>
