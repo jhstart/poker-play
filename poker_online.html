@@ -97,7 +97,17 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 .felt-bet.t-fold{border-color:#6a4040; color:#c98a8a; opacity:.85;}
 .felt-bet.t-out{border-color:#7a3a3a; color:#e0a0a0;}
 .felt-bet.t-wait{border-color:#3a4350; color:#8a939e;}
-#centerMsg{position:absolute; left:50%; top:30%; transform:translateX(-50%); font-size:15px; color:var(--gold); text-shadow:0 1px 3px #000; font-weight:600; text-align:center; white-space:nowrap;}
+#centerMsg{position:absolute; left:50%; top:30%; transform:translateX(-50%); font-size:18px; color:var(--gold); text-shadow:0 2px 5px #000; font-weight:800; text-align:center; white-space:nowrap; background:rgba(8,12,16,.55); padding:2px 14px; border-radius:12px;}
+#centerMsg:empty{display:none;}
+/* 내 홀카드 크게 */
+.seat.me .pcard{width:38px; height:53px; font-size:18px; border-radius:6px;}
+/* 내 차례 배너 + 진동 알림 */
+#turnBanner{position:absolute; left:50%; top:13%; transform:translateX(-50%); background:var(--gold); color:#241a00; font-weight:800; font-size:16px; padding:6px 18px; border-radius:20px; box-shadow:0 3px 12px rgba(0,0,0,.6); opacity:0; pointer-events:none; transition:opacity .2s; z-index:20;}
+#turnBanner.show{opacity:1; animation:turnPulse 1s ease infinite;}
+@keyframes turnPulse{0%,100%{transform:translateX(-50%) scale(1);}50%{transform:translateX(-50%) scale(1.06);}}
+/* 방장 연결 상태 배너 */
+#connBanner{position:absolute; left:50%; top:6%; transform:translateX(-50%); background:#5a2e2e; color:#ffd7d7; font-weight:700; font-size:13px; padding:5px 14px; border-radius:14px; z-index:21; display:none; white-space:nowrap;}
+#connBanner.show{display:block;}
 
 #sidePanel{width:280px; background:var(--panel); border-left:1px solid var(--line); display:flex; flex-direction:column;}
 #sidePanel h3{font-size:12px; color:var(--dim); padding:10px 14px 4px;}
@@ -158,15 +168,18 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
   .seat .act{font-size:9px; min-height:11px;}
   .bet-chip{font-size:12px; padding:2px 9px;}
 
-  /* 채팅: 항상 표시 (하단 고정, 약 5줄 + 내부 스크롤). 입력칸은 항상 하단 고정 */
-  #sidePanel{width:auto; height:150px; flex-shrink:0; overflow:hidden;
-    border-left:none; border-top:1px solid var(--line);}
-  #chatWrap{min-height:0;}
+  /* 채팅: 평소엔 얇게(peek), 탭하면 펼쳐짐. 입력칸은 항상 하단 고정 */
+  #sidePanel{width:auto; height:96px; flex-shrink:0; overflow:hidden;
+    border-left:none; border-top:1px solid var(--line); transition:height .2s;}
+  #sidePanel.chat-open{height:48vh;}
+  #chatWrap{min-height:0; position:relative;}
   #chatFab{display:none;}
   .chat-hd{display:none;}
-  #chat{flex:1 1 auto; min-height:0; overflow-y:auto; padding:5px 12px; line-height:1.5;}
+  #chat{flex:1 1 auto; min-height:0; overflow-y:auto; padding:5px 12px; line-height:1.5; cursor:pointer;}
   #chatBar{flex-shrink:0; padding:6px 8px;}
   #chatBar input{padding:8px;}
+  /* 내 카드: 모바일에서도 크게 */
+  .seat.me .pcard{width:33px; height:46px; font-size:16px;}
 
   /* 액션바: 베팅 컨트롤을 위로, 폴드/체크를 아래로 */
   #actionBar{padding:9px 10px; gap:7px; min-height:72px; align-content:flex-end;}
@@ -176,6 +189,19 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
   #raiseAmt{width:66px;}
   #raiseCtl button.raise{flex:1 1 auto;}
   .quick{flex:1 1 auto; padding:9px 6px; font-size:12px;}
+}
+
+/* ===== 가로 모드(landscape): 채팅을 우측으로, 테이블은 좌측 넓게 ===== */
+@media (max-width:960px) and (orientation:landscape){
+  #main{flex-direction:row;}
+  #tableWrap{flex:1; min-width:0; min-height:0;}
+  #sidePanel{width:210px; height:auto; flex-shrink:0; overflow:hidden;
+    border-top:none; border-left:1px solid var(--line); transition:none;}
+  #sidePanel.chat-open{height:auto;}
+  #table{width:82%; aspect-ratio:1.7; top:50%;}
+  #board{top:42%;}
+  #potLbl{top:58%;}
+  #turnBanner{top:6%;}
 }
 </style>
 </head>
@@ -268,10 +294,12 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 </header>
 <div id="main">
   <div id="tableWrap">
+    <div id="connBanner"></div>
     <div id="table"></div>
     <div id="board"></div>
     <div id="potLbl"></div>
     <div id="centerMsg"></div>
+    <div id="turnBanner">🔔 내 차례!</div>
   </div>
   <div id="sidePanel">
     <div id="chatWrap">
@@ -519,6 +547,13 @@ function enterRoom(){
     const seats=snap.val()||{};
     renderLobby(seats);
     if(isHost) hostOnSeats(seats);
+    // 방장 연결 상태 배너 (참가자에게만)
+    const cb=$('connBanner');
+    if(cb && !isHost && roomCfg && roomCfg.status==='playing'){
+      const hs=seats[roomCfg.host];
+      if(!hs || hs.online===false){ cb.textContent='⚠ 방장 연결 끊김 — 재접속 대기 중…'; cb.classList.add('show'); }
+      else cb.classList.remove('show');
+    } else if(cb){ cb.classList.remove('show'); }
   });
   db.ref('rooms/'+roomId+'/state').on('value', snap=>{ if(snap.exists()) renderTable(snap.val()); });
   db.ref('rooms/'+roomId+'/private/'+myUid).on('value', snap=>{ myHole = snap.val()?snap.val().hole:null; if(lastState) renderTable(lastState); });
@@ -554,6 +589,8 @@ $('chatSend').onclick=sendChat;
 $('chatInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChat(); } });
 $('chatFab').onclick=()=>$('sidePanel').classList.add('open');
 $('chatClose').onclick=()=>$('sidePanel').classList.remove('open');
+// 모바일: 채팅 메시지 영역 탭하면 펼치기/접기
+$('chat').addEventListener('click', ()=>{ if(window.innerWidth<=640) $('sidePanel').classList.toggle('chat-open'); });
 
 $('btnStartGame').onclick=()=>{
   if(!isHost) return;
@@ -650,7 +687,7 @@ function renderTable(s){
     if(pl){
       const fs=feltStatus(pl);
       if(fs){
-        const bx=x+(50-x)*0.40, by=y+(50-y)*0.40;
+        const bx=x+(50-x)*0.50, by=y+(50-y)*0.50;
         const b=document.createElement('div');
         let cls='felt-bet';
         if(/bet/.test(fs)) cls+=' t-bet';
@@ -685,9 +722,17 @@ setInterval(updateTimers, 500);
 // 방장: 진행 중 상태를 3초마다 재송신 → 유실된 업데이트 자동 복구(클라이언트 동기화)
 setInterval(()=>{ try{ if(isHost && G && !G.handOver && roomCfg && roomCfg.status==='playing') hostWriteState(); }catch(e){} }, 3000);
 let lastActionSig='';
+let turnBannerTimer=null;
+function notifyMyTurn(){
+  try{ if(navigator.vibrate) navigator.vibrate([120,60,120]); }catch(e){}
+  const b=$('turnBanner');
+  if(b){ b.classList.add('show'); clearTimeout(turnBannerTimer); turnBannerTimer=setTimeout(()=>b.classList.remove('show'), 2400); }
+}
 function renderActionBar(s){
   const bar=$('actionBar');
   document.body.classList.remove('acting');
+  const myTurnNow=(s.turn===myUid && !s.handOver && s.players && s.players[myUid] && !s.players[myUid].folded && !s.players[myUid].allin);
+  if(!myTurnNow) $('turnBanner').classList.remove('show');
   if(s.gameOver){
     lastActionSig='';
     bar.innerHTML=`<span id="waitMsg">🏆 ${esc(s.winnerName||'')} 우승 — 게임 종료!</span>`
@@ -710,8 +755,9 @@ function renderActionBar(s){
   const sig=s.handNo+'|'+s.street+'|'+s.currentBet+'|'+me.sc+'|'+me.stack;
   if(sig===lastActionSig && bar.querySelector('button.fold')) return;
   lastActionSig=sig;
-  // 내 차례가 막 되면 채팅 키보드를 닫아 액션 버튼이 가려지지 않게
+  // 내 차례가 막 되면: 채팅 키보드 닫기 + 진동 + 배너 알림
   if(document.activeElement===$('chatInput')) $('chatInput').blur();
+  notifyMyTurn();
   const toCall=s.currentBet - me.sc;
   const bb=roomCfg.bb;
   const minRaiseTo=s.currentBet + (s.lastRaise||bb);
@@ -1046,7 +1092,8 @@ function showdown(){
   for(const p of live) hlog(`${p.name}: ${p.hole.map(cardStr).join(' ')} → ${CAT_NAMES[handCat(scores[p.uid])]}`);
   let winnerNames=[];
   for(const uid in win){ if(win[uid]>0){ G.players[uid].stack+=win[uid]; hlog(`${G.players[uid].name} 팟 ${win[uid]} 획득`,'win'); winnerNames.push(G.players[uid].name); } }
-  G.centerMsg='쇼다운 — '+winnerNames.join(', ')+' 승리';
+  const bestScore=Math.max(...live.map(p=>scores[p.uid]));
+  G.centerMsg='🏆 '+winnerNames.join(', ')+' · '+CAT_NAMES[handCat(bestScore)];
   finishHand();
 }
 function finishHand(){
