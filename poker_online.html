@@ -66,9 +66,9 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 #heroPanel .hp-bet.t-bet{border-color:var(--gold); color:var(--gold);}
 #heroPanel .hp-bet.t-check{border-color:#3fae5a; color:#9fe0a8;}
 #heroPanel .hp-bet.t-fold{border-color:#6a4040; color:#c98a8a;}
-#table{position:absolute; left:50%; top:48%; transform:translate(-50%,-50%); width:min(80%,860px); aspect-ratio:1.85;
+#table{position:absolute; inset:6px 8px; box-sizing:border-box;
   background:radial-gradient(ellipse at center, var(--felt) 0%, var(--felt-dark) 100%);
-  border-radius:50%/55%; border:14px solid #3d2b1f; box-shadow:0 10px 40px rgba(0,0,0,.6), inset 0 0 60px rgba(0,0,0,.35);}
+  border-radius:50%; border:12px solid #3d2b1f; box-shadow:0 10px 40px rgba(0,0,0,.6), inset 0 0 60px rgba(0,0,0,.35);}
 .seat{position:absolute; width:100px; transform:translate(-50%,-50%); text-align:center; transition:opacity .25s;}
 .seat .box{background:rgba(10,14,18,.85); border:2px solid #333d48; border-radius:9px; padding:3px 5px; position:relative;}
 .seat.active .box{border-color:var(--gold); box-shadow:0 0 12px rgba(232,194,100,.55);}
@@ -92,15 +92,13 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 .pcard.big{width:46px; height:64px; font-size:19px;}
 .bet-chip{display:inline-block; font-size:14px; font-weight:800; color:#241a00; background:var(--gold); border-radius:12px; padding:2px 11px; margin-top:5px; box-shadow:0 2px 5px rgba(0,0,0,.55);}
 .bet-chip:empty{display:none;}
-#board{position:absolute; left:50%; top:43%; transform:translate(-50%,-50%); display:flex; gap:7px;}
-#potLbl{position:absolute; left:50%; top:56%; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center; gap:1px; white-space:nowrap; z-index:4; pointer-events:none;}
+#board{position:absolute; left:50%; top:47%; transform:translate(-50%,-50%); display:flex; gap:6px; z-index:3;}
+#potLbl{position:absolute; left:50%; top:66%; transform:translate(-50%,-50%); display:flex; align-items:center; gap:8px; white-space:nowrap; z-index:4; pointer-events:none;}
 #potLbl:empty{display:none;}
-.pot-lbl{font-size:11px; letter-spacing:5px; color:#cfe0cf; opacity:.7; font-weight:600;}
-.pot-amt{font-size:34px; font-weight:800; color:var(--gold); text-shadow:0 2px 5px #000; line-height:1.05;}
-.street-row{display:flex; align-items:center; gap:8px; margin-top:5px;}
-.street-pill{font-size:15px; font-weight:700; color:var(--gold); border:1.5px solid var(--gold); border-radius:13px; padding:2px 16px; background:rgba(8,12,16,.55);}
+.pot-amt{font-size:22px; font-weight:800; color:var(--gold); text-shadow:0 2px 4px #000;}
+.street-pill{font-size:13px; font-weight:700; color:var(--gold); border:1.5px solid var(--gold); border-radius:12px; padding:2px 12px; background:rgba(8,12,16,.6);}
 .street-pill:empty{display:none;}
-.turn-timer{font-size:16px; font-weight:800; color:#ffd27a; text-shadow:0 1px 3px #000;}
+.turn-timer{font-size:15px; font-weight:800; color:#ffd27a; text-shadow:0 1px 3px #000;}
 .turn-timer:empty{display:none;}
 .turn-timer.low{color:#ff6b6b;}
 /* 상태 배지: 박스의 중앙 향하는 면에 부착 */
@@ -116,7 +114,7 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 .felt-bet.t-fold{border-color:#6a4040; color:#c98a8a; opacity:.85;}
 .felt-bet.t-out{border-color:#7a3a3a; color:#e0a0a0;}
 .felt-bet.t-wait{border-color:#3a4350; color:#8a939e;}
-#centerMsg{position:absolute; left:50%; top:30%; transform:translateX(-50%); font-size:18px; color:var(--gold); text-shadow:0 2px 5px #000; font-weight:800; text-align:center; white-space:nowrap; background:rgba(8,12,16,.55); padding:2px 14px; border-radius:12px;}
+#centerMsg{position:absolute; left:50%; top:13%; transform:translateX(-50%); font-size:18px; color:var(--gold); text-shadow:0 2px 5px #000; font-weight:800; text-align:center; white-space:nowrap; background:rgba(8,12,16,.55); padding:2px 14px; border-radius:12px;}
 #centerMsg:empty{display:none;}
 /* 내 홀카드 크게 */
 .seat.me .pcard{width:38px; height:53px; font-size:18px; border-radius:6px;}
@@ -163,7 +161,7 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
   header button{padding:6px 10px; font-size:12px;}
 
   #tableWrap{min-width:0; flex:1; min-height:0;}
-  #table{width:97%; top:46%; aspect-ratio:1.35; border-width:9px;}
+  #table{inset:4px 4px; border-width:8px;}
   #heroPanel{gap:10px; padding:6px 12px;}
   #heroPanel .hp-cards .pcard{width:40px; height:56px; font-size:18px;}
   #heroPanel .hp-name{font-size:13px;}
@@ -176,24 +174,23 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
   .seat .pos{font-size:9px; padding:1px 4px;}
   .pcard{width:26px; height:37px; font-size:12px;}
   .pcard.big{width:34px; height:48px; font-size:15px;}
-  #board{gap:4px; top:37%;}
-  #potLbl{top:53%;}
-  #centerMsg{font-size:13px; top:15%;}
-  .pot-amt{font-size:27px;}
-  .pot-lbl{font-size:9px; letter-spacing:3px;}
-  .street-pill{font-size:13px; padding:2px 13px;}
+  #board{gap:4px; top:47%;}
+  #potLbl{top:67%;}
+  #centerMsg{font-size:13px; top:9%;}
+  .pot-amt{font-size:19px;}
+  .street-pill{font-size:12px; padding:2px 11px;}
   .turn-timer{font-size:14px;}
-  .felt-bet{font-size:13px; padding:3px 11px;}
+  .felt-bet{font-size:12px; padding:3px 10px;}
   /* 좌석 더 컴팩트하게 (가운데 팟 공간 확보) */
   .seat .nm{font-size:10px;}
   .seat .stk{font-size:10px;}
   .seat .act{font-size:9px; min-height:11px;}
   .bet-chip{font-size:12px; padding:2px 9px;}
 
-  /* 채팅: 평소엔 얇게(peek), 탭하면 펼쳐짐. 입력칸은 항상 하단 고정 */
-  #sidePanel{width:auto; height:58px; flex-shrink:0; overflow:hidden;
+  /* 채팅: 평소엔 2줄 peek, 입력 누르면 자동 확장. 입력칸은 항상 하단 고정 */
+  #sidePanel{width:auto; height:84px; flex-shrink:0; overflow:hidden;
     border-top:1px solid var(--line); transition:height .2s;}
-  #sidePanel.chat-open{height:42vh;}
+  #sidePanel.chat-open{height:46vh;}
   #chatWrap{min-height:0; position:relative;}
   #chatFab{display:none;}
   .chat-hd{display:none;}
@@ -215,7 +212,7 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 
 /* ===== 가로 모드(landscape): 컴팩트하게 ===== */
 @media (max-width:960px) and (orientation:landscape){
-  #table{width:74%; aspect-ratio:2.1; top:44%;}
+  #table{inset:4px 6%;}
   #sidePanel{height:44px;}
   #heroPanel{padding:4px 12px;}
   #heroPanel .hp-cards .pcard{width:34px; height:48px; font-size:16px;}
@@ -609,6 +606,9 @@ $('chatFab').onclick=()=>$('sidePanel').classList.add('open');
 $('chatClose').onclick=()=>$('sidePanel').classList.remove('open');
 // 모바일: 채팅 메시지 영역 탭하면 펼치기/접기
 $('chat').addEventListener('click', ()=>{ if(window.innerWidth<=640) $('sidePanel').classList.toggle('chat-open'); });
+// 입력칸을 누르면 바로 채팅 확장, 입력 끝나면 다시 접힘
+$('chatInput').addEventListener('focus', ()=>{ if(window.innerWidth<=640) $('sidePanel').classList.add('chat-open'); });
+$('chatInput').addEventListener('blur', ()=>{ if(window.innerWidth<=640) setTimeout(()=>$('sidePanel').classList.remove('chat-open'), 200); });
 
 $('btnStartGame').onclick=()=>{
   if(!isHost) return;
@@ -650,11 +650,10 @@ function feltStatus(pl){
   if(pl.sc>0) return pl.sc+' bet';   // 콜/벳/레이즈/블라인드
   return '대기';
 }
-// 팟: POT + 큰 숫자 + 스트리트(프리플랍/플랍/턴/리버) — 칩 그림 없음
+// 팟: 한 줄(금액 · 스트리트 · 타이머) — 보드와 안 겹치게 컴팩트
 function potHTML(amount, street){
   const names=['프리플랍','플랍','턴','리버'];
-  return `<div class="pot-lbl">P O T</div><div class="pot-amt">${(amount||0).toLocaleString()}</div>`
-    +`<div class="street-row"><span class="street-pill">${names[street]||''}</span><span class="turn-timer"></span></div>`;
+  return `<span class="pot-amt">💰 ${(amount||0).toLocaleString()}</span><span class="street-pill">${names[street]||''}</span><span class="turn-timer"></span>`;
 }
 function pcardHTML(c, big, faceDown){
   if(faceDown||c==null) return `<div class="pcard back ${big?'big':''}"></div>`;
@@ -668,7 +667,7 @@ function renderTable(s){
   const meSeat = seatList.find(x=>x.uid===myUid);
   const opps = seatList.filter(x=>x.uid!==myUid);   // 상대만 테이블 위, 나는 하단 패널
   const small=window.innerWidth<=640;
-  const rx=small?40:42, ry=small?33:32;
+  const rx=small?42:44, ry=small?27:28;   // 상단 호: 헤더 안 가리게 위로 덜 올림
   const K=opps.length||1;
   for(let i=0;i<opps.length;i++){
     const sd=opps[i];
