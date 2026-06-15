@@ -72,7 +72,7 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 /* ===== GGPoker 스타일 포드 ===== */
 .seat{position:absolute; transform:translate(-50%,-50%); transition:opacity .2s; display:flex; flex-direction:column; align-items:center; z-index:5;}
 .seat.folded{opacity:.42;}
-.seat .cards{display:flex; gap:2px; justify-content:center; margin-bottom:2px; position:relative; z-index:2;}
+.seat .cards{display:flex; gap:2px; justify-content:center; position:absolute; bottom:100%; left:50%; transform:translateX(-50%); margin-bottom:3px; z-index:2;}
 .seat .cards:empty{display:none;}
 .seat .box{background:rgba(12,16,22,.93); border:1.5px solid #2c3742; border-radius:9px; padding:6px 12px 5px; position:relative; min-width:80px;}
 .seat.active .box{border-color:#3fae5a; box-shadow:0 0 0 1px #3fae5a, 0 0 16px rgba(63,174,90,.75);}
@@ -85,17 +85,18 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 .seat.offline .off{display:block;}
 .seat .btn-disc{position:absolute; bottom:-9px; right:-9px; background:#f5c542; color:#3a2a00; font-size:11px; font-weight:800; width:20px; height:20px; line-height:20px; text-align:center; border-radius:50%; display:none; box-shadow:0 1px 3px rgba(0,0,0,.5);}
 .seat.dealer .btn-disc{display:block;}
-/* GGPoker 카드 페이스: 왼쪽 위 작은 랭크+무늬, 가운데 큰 랭크 */
-.pcard{position:relative; width:26px; height:37px; border-radius:4px; background:#fff; box-shadow:0 2px 5px rgba(0,0,0,.5); overflow:hidden;}
-.pcard .cn{position:absolute; top:1px; left:3px; font-weight:800; line-height:.85; text-align:center; font-size:9px;}
-.pcard .cn i{font-style:normal; display:block; font-size:8px;}
-.pcard .bg{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px;}
-.seat.me .cards .pcard{width:42px; height:58px; border-radius:6px;}
-.seat.me .cards .pcard .cn{font-size:12px; top:3px;} .seat.me .cards .pcard .cn i{font-size:10px;} .seat.me .cards .pcard .bg{font-size:27px;}
+/* GGPoker 카드: 위 색 띠(무늬색)+흰 랭크, 아래 흰 바탕+큰 색 랭크 */
+.pcard{position:relative; width:27px; height:38px; border-radius:4px; background:#fff; box-shadow:0 2px 5px rgba(0,0,0,.5); overflow:hidden;}
+.pcard::before{content:''; position:absolute; top:0; left:0; right:0; height:44%; background:currentColor;}
+.pcard .cn{position:absolute; top:0; left:0; right:0; z-index:1; color:#fff; font-weight:800; line-height:1; text-align:center; font-size:11px; padding-top:1px;}
+.pcard .cn i{font-style:normal; font-size:10px; margin-left:1px;}
+.pcard .bg{position:absolute; left:0; right:0; top:42%; bottom:1px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:17px; color:currentColor;}
+.seat.me .cards .pcard{width:46px; height:62px; border-radius:6px;}
+.seat.me .cards .pcard .cn{font-size:14px;} .seat.me .cards .pcard .cn i{font-size:12px;} .seat.me .cards .pcard .bg{font-size:28px;}
 .pcard.back{background:repeating-linear-gradient(45deg,#5a7ab8,#5a7ab8 4px,#4a66a0 4px,#4a66a0 8px); border:1.5px solid #dde;}
-.pcard.back .cn,.pcard.back .bg{display:none;}
-.pcard.big{width:50px; height:70px; border-radius:7px;}
-.pcard.big .cn{font-size:14px; top:3px; left:5px;} .pcard.big .cn i{font-size:12px;} .pcard.big .bg{font-size:34px;}
+.pcard.back::before, .pcard.back .cn, .pcard.back .bg{display:none;}
+.pcard.big{width:54px; height:75px; border-radius:7px;}
+.pcard.big .cn{font-size:16px;} .pcard.big .cn i{font-size:14px;} .pcard.big .bg{font-size:36px;}
 .bet-chip{display:inline-block; font-size:14px; font-weight:800; color:#241a00; background:var(--gold); border-radius:12px; padding:2px 11px; margin-top:5px; box-shadow:0 2px 5px rgba(0,0,0,.55);}
 .bet-chip:empty{display:none;}
 #board{position:absolute; left:50%; top:51%; transform:translate(-50%,-50%); display:flex; gap:7px; z-index:3;}
@@ -146,8 +147,11 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 #chatBar input{flex:1; padding:7px;}
 #chatBar button{padding:7px 12px; font-size:13px;}
 
-#actionBar{background:var(--panel); border-top:1px solid var(--line); padding:11px 16px; min-height:84px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
-#raiseCtl{display:flex; align-items:center; gap:8px;}
+#actionBar{background:var(--panel); border-top:1px solid var(--line); padding:10px 16px; min-height:78px; display:flex; flex-direction:column; align-items:stretch; gap:8px;}
+#actionBar>span#waitMsg{align-self:center;}
+#raiseCtl{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+#actRow{display:flex; gap:8px;}
+#actRow button{flex:1; padding:13px 8px; font-size:15px;}
 #raiseCtl input[type=range]{width:160px;}
 #raiseAmt{width:90px; text-align:right; color:var(--gold);}
 .quick{padding:6px 10px; font-size:12px;}
@@ -225,14 +229,12 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
   #sidePanel.chat-open{transform:translateY(0);}
   #chatFab{display:flex; position:fixed; left:12px; bottom:12px; width:44px; height:44px; border-radius:50%; align-items:center; justify-content:center; font-size:20px; background:#3a5a8a; border:1px solid #5077ab; padding:0; z-index:36;}
   /* 액션 패널: 우하단 고정 박스 (사이징 위 / 폴드·체크 아래) — 테이블·히어로와 안 겹침 */
-  #actionBar{position:fixed; right:8px; bottom:8px; left:auto; width:330px; max-width:46vw; background:rgba(8,12,16,.85); border:1px solid var(--line); border-radius:12px; min-height:0; padding:7px; gap:5px; z-index:30; flex-wrap:wrap; justify-content:flex-end; align-content:flex-end;}
-  #actionBar>span#waitMsg{flex:1 1 100%; text-align:center; padding:8px;}
-  #actionBar>button{order:2; flex:1 1 0; padding:11px 8px; font-size:14px;}
-  #raiseCtl{order:1; flex:1 1 100%; flex-wrap:wrap; gap:5px; justify-content:flex-end; align-items:center;}
-  #raiseCtl input[type=range]{flex:1 1 100%; width:auto; order:-2;}
-  #raiseAmt{width:56px; order:-1;}
-  #raiseCtl .quick{flex:1 1 auto; padding:7px 6px; font-size:12px;}
-  #raiseCtl button.raise{flex:1 1 auto; padding:9px 12px;}
+  #actionBar{position:fixed; right:8px; bottom:8px; left:auto; width:auto; min-width:300px; max-width:48vw; background:rgba(8,12,16,.86); border:1px solid var(--line); border-radius:12px; min-height:0; padding:8px; gap:7px; z-index:30;}
+  #raiseCtl{gap:5px;}
+  #raiseCtl input[type=range]{flex:1 1 100%; width:auto;}
+  #raiseAmt{width:52px; text-align:center;}
+  #raiseCtl .quick{flex:1 1 auto; padding:7px 5px; font-size:12px;}
+  #actRow button{padding:12px 8px; font-size:14px;}
 }
 </style>
 </head>
@@ -696,7 +698,7 @@ function renderTable(s){
   const M=seatList.length||1;
   const myI=Math.max(0, seatList.findIndex(x=>x.uid===myUid));
   const land = window.matchMedia('(orientation:landscape)').matches || window.innerWidth>900;
-  const rx=land?46:40, ry=land?34:42;   // 모든 플레이어를 오발 둘레에, 나=하단(6시)
+  const rx=land?47:40, ry=land?31:42;   // 모든 플레이어를 오발 둘레에, 나=하단(6시)
   for(let i=0;i<seatList.length;i++){
     const sd=seatList[i];
     const isMe = sd.uid===myUid;
@@ -815,9 +817,9 @@ function renderActionBar(s){
   const maxTo=me.sc + me.stack;
   const canCheck=toCall<=0;
   const callAmt=Math.min(toCall, me.stack);
-  let html=`<button class="fold" onclick="sendAction('fold')">폴드</button>`;
-  html+=`<button class="call" onclick="sendAction('${canCheck?'check':'call'}')">${canCheck?'체크':'콜 '+callAmt}</button>`;
-  if(maxTo>s.currentBet){
+  const canRaise = maxTo>s.currentBet;
+  let html='';
+  if(canRaise){
     const clamp=v=>Math.min(maxTo, Math.max(minRaiseTo, Math.round(v)));
     const p25=clamp(s.currentBet+s.pot*0.25), p50=clamp(s.currentBet+s.pot*0.5), p75=clamp(s.currentBet+s.pot*0.75), pPot=clamp(s.currentBet+s.pot);
     const init=clamp(s.currentBet+s.pot*0.66);
@@ -829,9 +831,13 @@ function renderActionBar(s){
       <button class="quick" onclick="setRaise(${p75})">75%</button>
       <button class="quick" onclick="setRaise(${pPot})">팟</button>
       <button class="quick" onclick="setRaise(${maxTo})">올인</button>
-      <button class="raise" onclick="sendRaise()">${s.currentBet>0?'레이즈':'벳'}</button>
     </div>`;
   }
+  html+=`<div id="actRow">
+    <button class="fold" onclick="sendAction('fold')">폴드</button>
+    <button class="call" onclick="sendAction('${canCheck?'check':'call'}')">${canCheck?'체크':'콜 '+callAmt}</button>
+    ${canRaise?`<button class="raise" onclick="sendRaise()">${s.currentBet>0?'레이즈':'벳'}</button>`:''}
+  </div>`;
   bar.innerHTML=html;
 }
 function syncRaise(v){ $('raiseAmt').value=v; }
