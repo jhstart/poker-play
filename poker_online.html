@@ -70,7 +70,7 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
   background:radial-gradient(ellipse at center, var(--felt) 0%, var(--felt-dark) 100%);
   border-radius:50%; border:12px solid #3d2b1f; box-shadow:0 10px 40px rgba(0,0,0,.6), inset 0 0 60px rgba(0,0,0,.35);}
 /* ===== GGPoker 스타일 포드 ===== */
-.seat{position:absolute; transform:translate(-50%,-50%); transition:opacity .2s; display:flex; flex-direction:column; align-items:center; z-index:5;}
+.seat{position:absolute; transform:translate(-50%,-50%); transition:opacity .2s; z-index:5;}
 .seat.folded{opacity:.42;}
 .seat .cards{display:flex; gap:2px; justify-content:center; position:absolute; bottom:100%; left:50%; transform:translateX(-50%); margin-bottom:3px; z-index:2;}
 .seat .cards:empty{display:none;}
@@ -79,7 +79,7 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 .seat.me .box{border-color:#5077ab;}
 .seat .nm{font-size:12px; font-weight:600; color:#e8eaed; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px;}
 .seat .stk{font-size:13px; color:#ffd86b; font-weight:700;}
-.seat .strength{font-size:11px; font-weight:600; color:#7fe0a0; background:rgba(8,12,16,.72); border-radius:8px; padding:1px 9px; margin-top:4px;}
+.seat .strength{position:absolute; top:100%; left:50%; transform:translateX(-50%); margin-top:5px; white-space:nowrap; font-size:11px; font-weight:600; color:#7fe0a0; background:rgba(8,12,16,.78); border-radius:8px; padding:1px 9px;}
 .seat .pos{position:absolute; top:-8px; right:-6px; background:#2a323c; color:#cdd5de; font-size:10px; padding:1px 6px; border-radius:8px;}
 .seat .off{position:absolute; top:-8px; left:-6px; background:#5a2e2e; color:#e7b3b3; font-size:9px; padding:1px 5px; border-radius:8px; display:none;}
 .seat.offline .off{display:block;}
@@ -699,7 +699,7 @@ function renderTable(s){
   const M=seatList.length||1;
   const myI=Math.max(0, seatList.findIndex(x=>x.uid===myUid));
   const land = window.matchMedia('(orientation:landscape)').matches || window.innerWidth>900;
-  const rx=land?47:40, ry=land?31:42;   // 모든 플레이어를 오발 둘레에, 나=하단(6시)
+  const rx=land?47:40, ry=land?34:42;   // 모든 플레이어를 오발 둘레에, 나=하단(6시)
   for(let i=0;i<seatList.length;i++){
     const sd=seatList[i];
     const isMe = sd.uid===myUid;
