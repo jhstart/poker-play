@@ -95,11 +95,11 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 .seat.me .cards .pcard .cn{font-size:14px;} .seat.me .cards .pcard .cn i{font-size:12px;} .seat.me .cards .pcard .bg{font-size:28px;}
 .pcard.back{background:repeating-linear-gradient(45deg,#5a7ab8,#5a7ab8 4px,#4a66a0 4px,#4a66a0 8px); border:1.5px solid #dde;}
 .pcard.back::before, .pcard.back .cn, .pcard.back .bg{display:none;}
-.pcard.big{width:54px; height:75px; border-radius:7px;}
-.pcard.big .cn{font-size:16px;} .pcard.big .cn i{font-size:14px;} .pcard.big .bg{font-size:36px;}
+.pcard.big{width:46px; height:64px; border-radius:6px;}
+.pcard.big .cn{font-size:14px;} .pcard.big .cn i{font-size:12px;} .pcard.big .bg{font-size:30px;}
 .bet-chip{display:inline-block; font-size:14px; font-weight:800; color:#241a00; background:var(--gold); border-radius:12px; padding:2px 11px; margin-top:5px; box-shadow:0 2px 5px rgba(0,0,0,.55);}
 .bet-chip:empty{display:none;}
-#board{position:absolute; left:50%; top:51%; transform:translate(-50%,-50%); display:flex; gap:7px; z-index:3;}
+#board{position:absolute; left:50%; top:51%; transform:translate(-50%,-50%); display:flex; flex-wrap:nowrap; gap:6px; z-index:3;}
 #potLbl{position:absolute; left:50%; top:33%; transform:translate(-50%,-50%); display:flex; align-items:center; gap:8px; white-space:nowrap; z-index:4; pointer-events:none; background:rgba(8,12,16,.66); border:1px solid rgba(232,194,100,.4); border-radius:16px; padding:4px 14px;}
 #potLbl:empty{display:none; border:none;}
 .pot-amt{font-size:18px; font-weight:800; color:var(--gold); text-shadow:0 1px 2px #000;}
@@ -229,12 +229,13 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
   #sidePanel.chat-open{transform:translateY(0);}
   #chatFab{display:flex; position:fixed; left:12px; bottom:12px; width:44px; height:44px; border-radius:50%; align-items:center; justify-content:center; font-size:20px; background:#3a5a8a; border:1px solid #5077ab; padding:0; z-index:36;}
   /* 액션 패널: 우하단 고정 박스 (사이징 위 / 폴드·체크 아래) — 테이블·히어로와 안 겹침 */
-  #actionBar{position:fixed; right:8px; bottom:8px; left:auto; width:auto; min-width:300px; max-width:48vw; background:rgba(8,12,16,.86); border:1px solid var(--line); border-radius:12px; min-height:0; padding:8px; gap:7px; z-index:30;}
-  #raiseCtl{gap:5px;}
-  #raiseCtl input[type=range]{flex:1 1 100%; width:auto;}
-  #raiseAmt{width:52px; text-align:center;}
-  #raiseCtl .quick{flex:1 1 auto; padding:7px 5px; font-size:12px;}
-  #actRow button{padding:12px 8px; font-size:14px;}
+  #actionBar{position:fixed; right:8px; bottom:8px; left:auto; width:266px; max-width:38vw; background:rgba(8,12,16,.9); border:1px solid var(--line); border-radius:12px; min-height:0; padding:7px; gap:6px; z-index:30;}
+  #raiseCtl{gap:4px;}
+  #raiseCtl input[type=range]{flex:1 1 100%; width:auto; margin:0 2px;}
+  #raiseAmt{width:44px; text-align:center; padding:5px 2px;}
+  #raiseCtl .quick{flex:1 1 auto; padding:6px 4px; font-size:11px;}
+  #actRow{gap:5px;}
+  #actRow button{padding:11px 4px; font-size:13px;}
 }
 </style>
 </head>
