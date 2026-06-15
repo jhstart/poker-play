@@ -72,7 +72,8 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 /* ===== GGPoker 스타일 포드 ===== */
 .seat{position:absolute; transform:translate(-50%,-50%); transition:opacity .2s; display:flex; flex-direction:column; align-items:center; z-index:5;}
 .seat.folded{opacity:.42;}
-.seat .cards{display:flex; gap:2px; justify-content:center; margin-bottom:-9px; position:relative; z-index:2;}
+.seat .cards{display:flex; gap:2px; justify-content:center; margin-bottom:2px; position:relative; z-index:2;}
+.seat .cards:empty{display:none;}
 .seat .box{background:rgba(12,16,22,.93); border:1.5px solid #2c3742; border-radius:9px; padding:6px 12px 5px; position:relative; min-width:80px;}
 .seat.active .box{border-color:#3fae5a; box-shadow:0 0 0 1px #3fae5a, 0 0 16px rgba(63,174,90,.75);}
 .seat.me .box{border-color:#5077ab;}
@@ -84,10 +85,17 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 .seat.offline .off{display:block;}
 .seat .btn-disc{position:absolute; bottom:-9px; right:-9px; background:#f5c542; color:#3a2a00; font-size:11px; font-weight:800; width:20px; height:20px; line-height:20px; text-align:center; border-radius:50%; display:none; box-shadow:0 1px 3px rgba(0,0,0,.5);}
 .seat.dealer .btn-disc{display:block;}
-.pcard{width:26px; height:37px; border-radius:4px; background:#fff; font-weight:700; font-size:13px; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.0; box-shadow:0 2px 5px rgba(0,0,0,.5);}
-.seat.me .cards .pcard{width:42px; height:58px; font-size:18px; border-radius:6px;}
+/* GGPoker 카드 페이스: 왼쪽 위 작은 랭크+무늬, 가운데 큰 랭크 */
+.pcard{position:relative; width:26px; height:37px; border-radius:4px; background:#fff; box-shadow:0 2px 5px rgba(0,0,0,.5); overflow:hidden;}
+.pcard .cn{position:absolute; top:1px; left:3px; font-weight:800; line-height:.85; text-align:center; font-size:9px;}
+.pcard .cn i{font-style:normal; display:block; font-size:8px;}
+.pcard .bg{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px;}
+.seat.me .cards .pcard{width:42px; height:58px; border-radius:6px;}
+.seat.me .cards .pcard .cn{font-size:12px; top:3px;} .seat.me .cards .pcard .cn i{font-size:10px;} .seat.me .cards .pcard .bg{font-size:27px;}
 .pcard.back{background:repeating-linear-gradient(45deg,#5a7ab8,#5a7ab8 4px,#4a66a0 4px,#4a66a0 8px); border:1.5px solid #dde;}
-.pcard.big{width:50px; height:70px; font-size:23px; border-radius:7px;}
+.pcard.back .cn,.pcard.back .bg{display:none;}
+.pcard.big{width:50px; height:70px; border-radius:7px;}
+.pcard.big .cn{font-size:14px; top:3px; left:5px;} .pcard.big .cn i{font-size:12px;} .pcard.big .bg{font-size:34px;}
 .bet-chip{display:inline-block; font-size:14px; font-weight:800; color:#241a00; background:var(--gold); border-radius:12px; padding:2px 11px; margin-top:5px; box-shadow:0 2px 5px rgba(0,0,0,.55);}
 .bet-chip:empty{display:none;}
 #board{position:absolute; left:50%; top:51%; transform:translate(-50%,-50%); display:flex; gap:7px; z-index:3;}
@@ -212,12 +220,19 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
   header h1{font-size:14px;}
   #tableWrap{flex:1; min-height:0;}
   #table{inset:2px 3%;}
-  #board{top:50%;} #potLbl{top:31%;}
+  #board{top:53%;} #potLbl{top:35%;}
   #sidePanel{position:fixed; left:0; bottom:0; width:280px; height:84%; transform:translateY(105%); transition:transform .2s; z-index:35; border-top:none; border-right:1px solid var(--line);}
   #sidePanel.chat-open{transform:translateY(0);}
   #chatFab{display:flex; position:fixed; left:12px; bottom:12px; width:44px; height:44px; border-radius:50%; align-items:center; justify-content:center; font-size:20px; background:#3a5a8a; border:1px solid #5077ab; padding:0; z-index:36;}
-  #actionBar{position:fixed; right:12px; bottom:10px; left:auto; width:auto; max-width:60%; background:transparent; border:none; min-height:0; padding:0; gap:6px; z-index:30; justify-content:flex-end; flex-wrap:wrap;}
-  #actionBar>span#waitMsg{background:rgba(8,12,16,.7); padding:6px 12px; border-radius:10px;}
+  /* 액션 패널: 우하단 고정 박스 (사이징 위 / 폴드·체크 아래) — 테이블·히어로와 안 겹침 */
+  #actionBar{position:fixed; right:8px; bottom:8px; left:auto; width:330px; max-width:46vw; background:rgba(8,12,16,.85); border:1px solid var(--line); border-radius:12px; min-height:0; padding:7px; gap:5px; z-index:30; flex-wrap:wrap; justify-content:flex-end; align-content:flex-end;}
+  #actionBar>span#waitMsg{flex:1 1 100%; text-align:center; padding:8px;}
+  #actionBar>button{order:2; flex:1 1 0; padding:11px 8px; font-size:14px;}
+  #raiseCtl{order:1; flex:1 1 100%; flex-wrap:wrap; gap:5px; justify-content:flex-end; align-items:center;}
+  #raiseCtl input[type=range]{flex:1 1 100%; width:auto; order:-2;}
+  #raiseAmt{width:56px; order:-1;}
+  #raiseCtl .quick{flex:1 1 auto; padding:7px 6px; font-size:12px;}
+  #raiseCtl button.raise{flex:1 1 auto; padding:9px 12px;}
 }
 </style>
 </head>
@@ -670,7 +685,8 @@ function potHTML(amount, street){
 const SUIT_COLOR=['#1a1a1a','#d11f2a','#1f6fd0','#1d9e4a']; // ♠검정 ♥빨강 ♦파랑 ♣초록 (4색덱)
 function pcardHTML(c, big, faceDown){
   if(faceDown||c==null) return `<div class="pcard back ${big?'big':''}"></div>`;
-  return `<div class="pcard ${big?'big':''}" style="color:${SUIT_COLOR[st(c)]}">${rankDisp(rk(c))}<span>${SUIT_CH[st(c)]}</span></div>`;
+  const col=SUIT_COLOR[st(c)], r=rankDisp(rk(c)), su=SUIT_CH[st(c)];
+  return `<div class="pcard ${big?'big':''}" style="color:${col}"><span class="cn">${r}<i>${su}</i></span><span class="bg">${r}</span></div>`;
 }
 function renderTable(s){
   lastState=s;
@@ -680,7 +696,7 @@ function renderTable(s){
   const M=seatList.length||1;
   const myI=Math.max(0, seatList.findIndex(x=>x.uid===myUid));
   const land = window.matchMedia('(orientation:landscape)').matches || window.innerWidth>900;
-  const rx=land?45:40, ry=land?40:42;   // 모든 플레이어를 오발 둘레에, 나=하단(6시)
+  const rx=land?46:40, ry=land?34:42;   // 모든 플레이어를 오발 둘레에, 나=하단(6시)
   for(let i=0;i<seatList.length;i++){
     const sd=seatList[i];
     const isMe = sd.uid===myUid;
