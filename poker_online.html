@@ -139,7 +139,7 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
 #log{flex:1; overflow-y:auto; padding:4px 14px 10px; font-size:12px; line-height:1.7; color:#b9c2cc;}
 #log .hd{color:var(--gold); font-weight:600; margin-top:6px;}
 #log .win{color:#9fd49f;}
-#chatWrap{flex:1; border-top:1px solid var(--line); display:flex; flex-direction:column;}
+#chatWrap{flex:1; min-height:0; border-top:1px solid var(--line); display:flex; flex-direction:column;}
 #chat{flex:1 1 auto; min-height:0; overflow-y:auto; padding:4px 14px; font-size:12px; line-height:1.6; color:#cdd5de;}
 #chat div{margin:2px 0; word-break:break-word;}
 #chat b{color:var(--gold); font-weight:600;}
@@ -239,9 +239,16 @@ header .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
   .seat .strength{font-size:10px; padding:1px 7px; margin-top:3px;}
   .pot-amt{font-size:15px;} .turn-timer{font-size:13px;} .felt-bet{font-size:11px; padding:2px 8px;}
   .felt-bet.b-above{margin-bottom:28px;} .seat.me .felt-bet.b-above{margin-bottom:50px;}
-  #sidePanel{position:fixed; left:0; bottom:0; width:280px; height:84%; transform:translateY(105%); transition:transform .2s; z-index:35; border-top:none; border-right:1px solid var(--line);}
-  #sidePanel.chat-open{transform:translateY(0);}
-  #chatFab{display:flex; position:fixed; left:12px; bottom:12px; width:44px; height:44px; border-radius:50%; align-items:center; justify-content:center; font-size:20px; background:#3a5a8a; border:1px solid #5077ab; padding:0; z-index:36;}
+  /* 채팅: 항상 보이는 5줄 패널(좌하단). 메시지는 내부 스크롤, 입력칸 고정 */
+  #sidePanel{position:fixed; left:8px; bottom:8px; width:230px; height:150px; transform:none !important; transition:none;
+    z-index:35; background:rgba(8,12,16,.72); border:1px solid var(--line); border-radius:10px; overflow:hidden; display:flex; flex-direction:column;}
+  #chatWrap{flex:1; min-height:0; border-top:none;}
+  #chat{flex:1; min-height:0; overflow-y:auto; padding:4px 10px; font-size:12px; line-height:1.45;}
+  #chatBar{flex-shrink:0; padding:5px 7px;}
+  #chatBar input{padding:6px;}
+  #chatBar button{padding:6px 10px; font-size:12px;}
+  #chatFab{display:none;}
+  .chat-hd{display:none;}
   /* 액션 패널: 우하단 고정 박스 (사이징 위 / 폴드·체크 아래) — 테이블·히어로와 안 겹침 */
   #actionBar{position:fixed; right:8px; bottom:8px; left:auto; width:266px; max-width:38vw; background:rgba(8,12,16,.9); border:1px solid var(--line); border-radius:12px; min-height:0; padding:7px; gap:6px; z-index:30;}
   #raiseCtl{gap:4px;}
