@@ -207,9 +207,17 @@ function speak(text){
   if(!VOICE_ON||!('speechSynthesis' in window))return;
   try{window.speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(text);
-    u.lang='ko-KR';if(VOICE_KO)u.voice=VOICE_KO;u.rate=1.0;u.pitch=1.15;
+    u.lang='ko-KR';if(VOICE_KO)u.voice=VOICE_KO;u.rate=1.2;u.pitch=1.0;
     window.speechSynthesis.speak(u);
   }catch(e){}
+}
+function warmVoice(){
+  if(!VOICE_ON||!('speechSynthesis' in window))return;
+  try{['폴드','체크','콜','콜, 올인','레이즈','올인'].forEach(t=>{
+    const u=new SpeechSynthesisUtterance(t);
+    u.lang='ko-KR';if(VOICE_KO)u.voice=VOICE_KO;u.volume=0;
+    window.speechSynthesis.speak(u);
+  });}catch(e){}
 }
 const CHIP_DEFS=[{v:1000,c:'#1c1c1c'},{v:500,c:'#7b3fa0'},{v:100,c:'#2b4a6f'},{v:25,c:'#2e7d32'},{v:5,c:'#b5483f'},{v:1,c:'#d8dde0'}];
 function chipStack(amount,maxN=5,small=false){
@@ -237,7 +245,7 @@ function startGame(){
      sb,bb,dealer:Math.floor(Math.random()*names.length),handNo:0,orient:'rotate'};
   document.getElementById('setup').style.display='none';
   document.getElementById('stage').style.display='block';
-  layoutSeats();checkOrient();newHand();
+  layoutSeats();checkOrient();warmVoice();newHand();
 }
 function menu(){if(confirm('게임을 끝내고 설정으로 돌아갈까요?'))location.reload();}
 
